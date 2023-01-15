@@ -72,6 +72,24 @@ if __name__ == "__main__":
 
     render_n_samples = 1024
 
+    # create output folders
+    try:
+      os.mkdir("network_out")
+    except:
+      pass
+
+    try:
+      os.stat("/mnt/io/")
+      RENDER_PATH = "/mnt/io/render_out"
+    except:
+      RENDER_PATH = "./render_out"
+    
+    try:
+      os.mkdir(RENDER_PATH)
+    except:
+      pass
+      
+
     # setup the scene bounding box.
     contraction_type = ContractionType.AABB
     scene_aabb = torch.tensor(args.aabb, dtype=torch.float32, device=device)
@@ -322,9 +340,13 @@ if __name__ == "__main__":
                     )
 
                     imageio.imwrite(
-                        os.path.join(".", "render_out", f"rgb_time_{t}_img_{i}.png"),
+                        os.path.join(RENDER_PATH, f"rgb_time_{t}_img_{i}.png"),
                         (rgb.cpu().numpy() * 255).astype(np.uint8),
                     )
                     print(f"Image at time={t}, render={i}")
 
                     step += 1
+
+        import subprocess
+        subprocess.run(["zip", "render.zip", "*.png"], cwd=RENDER_PATH)
+        print("All done!")
