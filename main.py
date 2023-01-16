@@ -103,7 +103,7 @@ if __name__ == "__main__":
     max_steps = args.max_steps
     grad_scaler = torch.cuda.amp.GradScaler(1)
     radiance_field = ZD_NeRFRadianceField().to(device)
-    optimizer = torch.optim.Adam(radiance_field.parameters(), lr=5e-4)
+    optimizer = torch.optim.Adam(radiance_field.parameters(), lr=1e-4)
     scheduler = torch.optim.lr_scheduler.MultiStepLR(
         optimizer,
         milestones=[
