@@ -181,7 +181,7 @@ class ODEfunc(nn.Module):
             self.layers.append(nn.Linear(width, width))
         self.layers.append(nn.Linear(width, output_dim))
 
-        self.jacobian_predict_func = vmap(jacrev(self.predict, argnums=(0)), ((0), (None)))
+        self.jacobian_predict_func = vmap(jacrev(self.predict, argnums=(0)), 0, 0)
 
         """for l in self.layers:
             nn.init.normal_(l.weight, mean=0, std=0.0001)
