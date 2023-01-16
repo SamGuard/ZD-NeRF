@@ -188,20 +188,18 @@ class ODEfunc(nn.Module):
             # nn.init.constant_(l.weight, 0.001)
             nn.init.constant_(l.bias, val=0)"""
 
-    def predict(self, t, x):
-        x = torch.cat(
-            (x, torch.zeros(size=(x.shape[0], 1), device="cuda:0") + t), dim=1
-        )
-
+    def predict(self, x):
         for l in self.layers[:-1]:
             x = torch.tanh(l(x))
             
         return self.layers[-1](x)
     
     def forward(self, t, x):
-        print(t.shape)
+        x = torch.cat(
+            (x, torch.zeros(size=(x.shape[0], 1), device="cuda:0") + t), dim=1
+        )
         print(x.shape)
-        jac = torch.squeeze(self.jacobian_predict_func(t, x))
+        jac = torch.squeeze(self.jacobian_predict_func(x))
         dFz_dy = jac[:, 2, 1]
         dFy_dz = jac[:, 1, 2]
         dFx_dz = jac[:, 0, 2]
@@ -218,10 +216,9 @@ class ODEBlock(nn.Module):
         self.odefunc = odefunc
 
     def forward(self, t: torch.Tensor, x: torch.Tensor):
-        print(t.shape)
         # Need to sort in order of time
         time_steps, args = torch.unique(t, sorted=True, return_inverse=True)
-
+        print(time_steps.shape)
         # Morphed points
         morphed = odeint(
             self.odefunc,
