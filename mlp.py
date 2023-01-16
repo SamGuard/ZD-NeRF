@@ -12,6 +12,8 @@ import time
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from functorch import vmap,jacrev
+
 from torchdiffeq import odeint_adjoint as odeint
 
 
@@ -179,19 +181,33 @@ class ODEfunc(nn.Module):
             self.layers.append(nn.Linear(width, width))
         self.layers.append(nn.Linear(width, output_dim))
 
+        self.jacobian_predict_func = vmap(jacrev(self.predict, argnums=(0)), ((0), (None)))
+
         """for l in self.layers:
             nn.init.normal_(l.weight, mean=0, std=0.0001)
             # nn.init.constant_(l.weight, 0.001)
             nn.init.constant_(l.bias, val=0)"""
 
-    def forward(self, t, x):
+    def predict(self, t, x):
         x = torch.cat(
             (x, torch.zeros(size=(x.shape[0], 1), device="cuda:0") + t), dim=1
         )
 
         for l in self.layers[:-1]:
             x = torch.tanh(l(x))
+            
         return self.layers[-1](x)
+    
+    def forward(self, t, x):
+        jac = torch.squeeze(self.jacobian_predict_func(t, x))
+        dFz_dy = jac[:, 2, 1]
+        dFy_dz = jac[:, 1, 2]
+        dFx_dz = jac[:, 0, 2]
+        dFz_dx = jac[:, 2, 0]
+        dFy_dx = jac[:, 1, 0]
+        dFx_dy = jac[:, 0, 1]
+        div_free = torch.stack([dFz_dy - dFy_dz, dFx_dz - dFz_dx, dFy_dx - dFx_dy], axis=1)
+        return div_free
 
 
 class ODEBlock(nn.Module):
