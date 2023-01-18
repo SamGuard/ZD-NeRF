@@ -195,9 +195,6 @@ class ODEfunc(nn.Module):
         return self.layers[-1](x)
     
     def forward(self, t, x):
-        print(t)
-        print(x)
-        print("#############")
         x = torch.cat(
             (x, torch.zeros(size=(x.shape[0], 1), device="cuda:0") + t), dim=1
         )
@@ -209,6 +206,7 @@ class ODEfunc(nn.Module):
         dFy_dx = jac[:, 1, 0]
         dFx_dy = jac[:, 0, 1]
         div_free = torch.stack([dFz_dy - dFy_dz, dFx_dz - dFz_dx, dFy_dx - dFx_dy], axis=1)
+        print(div_free)
         return div_free
 
 
