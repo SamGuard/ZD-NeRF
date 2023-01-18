@@ -195,6 +195,9 @@ class ODEfunc(nn.Module):
         return self.layers[-1](x)
     
     def forward(self, t, x):
+        print(t.shape)
+        if(t.shape[0] == 0):
+            return 0/0
         x = torch.cat(
             (x, torch.zeros(size=(x.shape[0], 1), device="cuda:0") + t), dim=1
         )
