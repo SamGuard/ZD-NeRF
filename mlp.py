@@ -206,7 +206,6 @@ class ODEfunc(nn.Module):
         dFy_dx = jac[:, 1, 0]
         dFx_dy = jac[:, 0, 1]
         div_free = torch.stack([dFz_dy - dFy_dz, dFx_dz - dFz_dx, dFy_dx - dFx_dy], axis=1)
-        print(div_free)
         return div_free
 
 
