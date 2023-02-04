@@ -91,7 +91,7 @@ def render_image(
             chunk_rays.viewdirs,
             scene_aabb=scene_aabb,
             grid=occupancy_grid,
-            #sigma_fn=sigma_fn,
+            sigma_fn=sigma_fn,
             near_plane=near_plane,
             far_plane=far_plane,
             render_step_size=render_step_size,
