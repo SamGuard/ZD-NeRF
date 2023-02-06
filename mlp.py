@@ -218,12 +218,10 @@ class ODEBlock(nn.Module):
         print(x)
         if(len(x) == 0):
             return torch.zeros_like(x)
-        if(x.shape[1] == 1):
-            print("hi")
-            print(0/0)
 
         # Need to sort in order of time
         time_steps, args = torch.unique(t, sorted=True, return_inverse=True)
+        print(time_steps)
         # Morphed points
         morphed = odeint(
             self.odefunc,
@@ -381,10 +379,6 @@ class ZD_NeRFRadianceField(nn.Module):
         return opacity
 
     def query_density(self, x, t):
-        print("----")
-        print(x)
-        print(t)
-        print("----")
         x = self.warp(t.flatten(), x)
         return self.nerf.query_density(x)
 
