@@ -227,7 +227,8 @@ class ODEBlock(nn.Module):
         if(len(x) == 0):
             return torch.zeros_like(x)
         
-        print(t)
+        print(t.shape)
+        print(x.shape)
         return x + 10.0 * t
 
         # Need to sort in order of time
