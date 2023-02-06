@@ -195,10 +195,10 @@ class ODEfunc(nn.Module):
         return self.layers[-1](x)
     
     def forward(self, t, x):
-        print("func\n", x)
         x = torch.cat(
             (x, torch.zeros(size=(x.shape[0], 1), device="cuda:0") + t), dim=1
         )
+        print("func\n", x)
         jac = torch.squeeze(self.jacobian_predict_func(x))
         dFz_dy = jac[:, 2, 1]
         dFy_dz = jac[:, 1, 2]
