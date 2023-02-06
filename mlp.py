@@ -195,6 +195,7 @@ class ODEfunc(nn.Module):
         return self.layers[-1](x)
     
     def forward(self, t, x):
+        print("func\n", x)
         x = torch.cat(
             (x, torch.zeros(size=(x.shape[0], 1), device="cuda:0") + t), dim=1
         )
@@ -219,9 +220,11 @@ class ODEBlock(nn.Module):
         if(len(x) == 0):
             return torch.zeros_like(x)
 
+
+
         # Need to sort in order of time
         time_steps, args = torch.unique(t, sorted=True, return_inverse=True)
-        print(time_steps)
+
         # Morphed points
         morphed = odeint(
             self.odefunc,
