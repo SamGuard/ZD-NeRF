@@ -298,7 +298,7 @@ if __name__ == "__main__":
 
         with torch.no_grad():
             for t in map(lambda x: x / num_time, range(num_time)):
-                for i in [3]:#range(len(test_dataset)):
+                for i in [0,1,2,3]:#range(len(test_dataset)):
                     data = test_dataset[i]
                     render_bkgd = data["color_bkgd"]
                     rays = data["rays"]
