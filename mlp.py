@@ -380,6 +380,10 @@ class ZD_NeRFRadianceField(nn.Module):
         return opacity
 
     def query_density(self, x, t):
+        print("----")
+        print(x)
+        print(t)
+        print("----")
         x = self.warp(t.flatten(), x)
         return self.nerf.query_density(x)
 
