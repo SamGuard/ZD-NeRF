@@ -215,7 +215,7 @@ class ODEBlock(nn.Module):
         self.odefunc = odefunc
 
     def forward(self, t: torch.Tensor, x: torch.Tensor):
-        if(len(x) == 0):
+        if(len(x) == 0 or x.shape[1] == 1):
             return torch.zeros_like(x)
         
         print(x)
