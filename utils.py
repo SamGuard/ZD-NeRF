@@ -86,6 +86,7 @@ def render_image(
     
     for i in range(0, num_rays, chunk):
         chunk_rays = namedtuple_map(lambda r: r[i : i + chunk], rays)
+        print(chunk_rays)
         packed_info, t_starts, t_ends = ray_marching(
             chunk_rays.origins,
             chunk_rays.viewdirs,
@@ -99,6 +100,7 @@ def render_image(
             cone_angle=cone_angle,
             alpha_thre=alpha_thre,
         )
+        print(t_starts)
         if(t_starts.shape[0] > 0):
             rgb, opacity, depth = rendering(
                 rgb_sigma_fn,
