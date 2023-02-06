@@ -173,7 +173,7 @@ class NerfMLP(nn.Module):
 
 class ODEfunc(nn.Module):
     def __init__(self, input_dim, output_dim, width=32, depth=8):
-        super(ODEfunc, self).__init__()
+        super().__init__()
         self.layers = nn.ModuleList()
 
         self.layers.append(nn.Linear(input_dim, width))
@@ -195,9 +195,9 @@ class ODEfunc(nn.Module):
         return self.layers[-1](x)
     
     def forward(self, t, x):
-        return x + 1.0 * t
-        
-    def forward_(self, t, x):
+        return x + 10.0 * t
+
+    def forward_temp(self, t, x):
         x = torch.cat(
             (x, torch.zeros(size=(x.shape[0], 1), device="cuda:0") + t), dim=1
         )
@@ -220,7 +220,7 @@ class ODEfunc(nn.Module):
 
 class ODEBlock(nn.Module):
     def __init__(self, odefunc):
-        super(ODEBlock, self).__init__()
+        super().__init__()
         self.odefunc = odefunc
 
     def forward(self, t: torch.Tensor, x: torch.Tensor):

@@ -282,9 +282,7 @@ if __name__ == "__main__":
         radiance_field.load_state_dict(
             torch.load(os.path.join(".", "network_out", args.model), device)
         )
-        for name, param in radiance_field.named_parameters():
-            print(name, param)
-            
+        
         radiance_field.to(device)
         radiance_field.eval()
         step = 0
