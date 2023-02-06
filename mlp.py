@@ -195,6 +195,9 @@ class ODEfunc(nn.Module):
         return self.layers[-1](x)
     
     def forward(self, t, x):
+        return x + 1.0 * t
+        
+    def forward_(self, t, x):
         x = torch.cat(
             (x, torch.zeros(size=(x.shape[0], 1), device="cuda:0") + t), dim=1
         )
@@ -362,16 +365,13 @@ class DNeRFRadianceField(nn.Module):
         )
         return self.nerf(x, condition=condition)
 
-def test_ODE_func(t, x):
-    return x + 1.0 * t
 
 class ZD_NeRFRadianceField(nn.Module):
     def __init__(self) -> None:
         super().__init__()
         self.posi_encoder = SinusoidalEncoder(3, 0, 4, True)
         self.time_encoder = SinusoidalEncoder(1, 0, 4, True)
-        #self.warp = ODEBlock(ODEfunc(input_dim=4, output_dim=3, width=64))
-        self.warp = ODEBlock(test_ODE_func)
+        self.warp = ODEBlock(ODEfunc(input_dim=4, output_dim=3, width=64))
         self.nerf = VanillaNeRFRadianceField()
 
     def query_opacity(self, x, timestamps, step_size):
