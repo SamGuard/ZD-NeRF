@@ -362,13 +362,16 @@ class DNeRFRadianceField(nn.Module):
         )
         return self.nerf(x, condition=condition)
 
+def test_ODE_func(t, x):
+    return x + 1.0 * t
 
 class ZD_NeRFRadianceField(nn.Module):
     def __init__(self) -> None:
         super().__init__()
         self.posi_encoder = SinusoidalEncoder(3, 0, 4, True)
         self.time_encoder = SinusoidalEncoder(1, 0, 4, True)
-        self.warp = ODEBlock(ODEfunc(input_dim=4, output_dim=3, width=64))
+        #self.warp = ODEBlock(ODEfunc(input_dim=4, output_dim=3, width=64))
+        self.warp = ODEBlock(test_ODE_func)
         self.nerf = VanillaNeRFRadianceField()
 
     def query_opacity(self, x, timestamps, step_size):
