@@ -198,7 +198,7 @@ class ODEfunc(nn.Module):
         x = torch.cat(
             (x, torch.zeros(size=(x.shape[0], 1), device="cuda:0") + t), dim=1
         )
-        jac = torch.squeeze(self.jacobian_rpedict_func(x))
+        jac = torch.squeeze(self.jacobian_predict_func(x))
         print("func\n", jac)
         dFz_dy = jac[:, 2, 1]
         dFy_dz = jac[:, 1, 2]
