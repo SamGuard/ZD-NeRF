@@ -229,7 +229,8 @@ class ODEBlock(nn.Module):
         
         print(t.shape)
         print(x.shape)
-        return x + 10.0 * t
+        x[:,0] += t * 10.0
+        return x 
 
         # Need to sort in order of time
         time_steps, args = torch.unique(t, sorted=True, return_inverse=True)
