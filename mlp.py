@@ -227,8 +227,6 @@ class ODEBlock(nn.Module):
         if(len(x) == 0):
             return torch.zeros_like(x)
         
-        print(t.shape)
-        print(x.shape)
         x[:,0] += t * 10.0
         return x 
 
