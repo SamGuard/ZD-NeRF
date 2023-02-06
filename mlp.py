@@ -198,8 +198,13 @@ class ODEfunc(nn.Module):
         x = torch.cat(
             (x, torch.zeros(size=(x.shape[0], 1), device="cuda:0") + t), dim=1
         )
+        return self.predict(x)
+
+    def forward_zero_div(self, t, x):
+        x = torch.cat(
+            (x, torch.zeros(size=(x.shape[0], 1), device="cuda:0") + t), dim=1
+        )
         jac = torch.squeeze(self.jacobian_predict_func(x))
-        print("func\n", jac)
         dFz_dy = jac[:, 2, 1]
         dFy_dz = jac[:, 1, 2]
         dFx_dz = jac[:, 0, 2]
@@ -216,11 +221,8 @@ class ODEBlock(nn.Module):
         self.odefunc = odefunc
 
     def forward(self, t: torch.Tensor, x: torch.Tensor):
-        print(x)
         if(len(x) == 0):
             return torch.zeros_like(x)
-
-
 
         # Need to sort in order of time
         time_steps, args = torch.unique(t, sorted=True, return_inverse=True)
@@ -386,6 +388,5 @@ class ZD_NeRFRadianceField(nn.Module):
         return self.nerf.query_density(x)
 
     def forward(self, x, t, condition=None):
-        print("forward")
         x = self.warp(t.flatten(), x)
         return self.nerf(x, condition=condition)
