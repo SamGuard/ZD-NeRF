@@ -124,7 +124,7 @@ if __name__ == "__main__":
         root_fp=data_root_fp,
         split=args.train_split,
         num_rays=target_sample_batch_size // render_n_samples,
-        #batch_over_images=False
+        batch_over_images=False
     )
     train_dataset.images = train_dataset.images.to(device)
     train_dataset.camtoworlds = train_dataset.camtoworlds.to(device)
@@ -153,15 +153,15 @@ if __name__ == "__main__":
     tic = time.time()
     if not args.just_render:
         for epoch in range(10000000):
-            for i in range(len(train_dataset)):
+            for i in range(2):#range(len(train_dataset)):
                 radiance_field.train()
                 data = train_dataset[i]
 
                 render_bkgd = data["color_bkgd"]
                 rays = data["rays"]
                 pixels = data["pixels"]
-                timestamps = data["timestamps"] #torch.zeros(size=(pixels.shape[0],1), device="cuda:0") + data["timestamps"]
-                #print(timestamps[:10])
+                #timestamps = data["timestamps"] 
+                timestamps = torch.zeros(size=(pixels.shape[0],1), device="cuda:0") + data["timestamps"]
 
                 # update occupancy grid
                 occupancy_grid.every_n_step(
