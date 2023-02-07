@@ -244,7 +244,7 @@ class ODEBlock_torchdyn(nn.Module):
         super().__init__()
         self.odefunc = odefunc
         self.ode = torchdyn_NeuralODE(
-            self.odefunc, sensitivity="adjoint", solver="dopri5"
+            self.odefunc, solver="dopri5"
         ).to("cuda:0")
 
     def forward(self, t: torch.Tensor, x: torch.Tensor):
@@ -253,7 +253,7 @@ class ODEBlock_torchdyn(nn.Module):
 
         # Need to sort in order of time
         time_steps, args = torch.unique(t, sorted=True, return_inverse=True)
-        print(time_steps)
+        
         t_span = torch.tensor([torch.min(x),torch.max(x)]).to("cuda:0")
         # Morphed points
         _, morphed = self.ode(x, t_span=t_span, save_at=time_steps)
