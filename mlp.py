@@ -218,7 +218,7 @@ class ODEBlock_torchdiffeq(nn.Module):
         super().__init__()
         self.odefunc = odefunc
 
-    def forward(self, t: torch.Tensor, x: torch.Tensor):
+    def forward(self, x: torch.Tensor, t: torch.Tensor):
         if len(x) == 0:
             return torch.zeros_like(x)
 
