@@ -258,7 +258,7 @@ class ODEBlock_torchdyn(nn.Module):
         needs_zero = True
         if not torch.any(time_steps == 0.0):
             needs_zero = False
-            time_steps = torch.cat((torch.tensor([0]), time_steps), dim=0)
+            time_steps = torch.cat((torch.tensor([0]).to("cuda:0"), time_steps), dim=0)
 
         # Morphed points
         _, morphed = self.ode(x, time_steps)
