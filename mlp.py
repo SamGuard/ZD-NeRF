@@ -188,6 +188,9 @@ class ODEfunc(nn.Module):
         return self.layers[-1](x)
 
     def forward(self, x, t):
+        print(x)
+        print(t)
+        print(0/0)
         return x + 10.0 * t
 
     def forward_temp(self, t, x):
