@@ -262,7 +262,7 @@ class ODEBlock_torchdyn(nn.Module):
 
         # Morphed points
         _, morphed = self.ode(x, time_steps)
-        print(morphed)
+        print(morphed.shape)
         if not needs_zero:
             morphed = morphed[1:]
 
