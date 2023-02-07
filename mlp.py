@@ -276,8 +276,10 @@ class ODEBlock_torchdyn(nn.Module):
         # Then indexing by r gives the morphed point at the time given
         
         r = torch.linspace(0, x.shape[0] - 1, x.shape[0], dtype=torch.long)
-
+        print(morphed)
         out = morphed[args, r]
+        print(out)
+        print("----")
 
         return out
 
