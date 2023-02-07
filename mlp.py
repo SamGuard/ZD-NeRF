@@ -255,6 +255,8 @@ class ODEBlock_torchdyn(nn.Module):
         time_steps, args = torch.unique(t, sorted=True, return_inverse=True)
 
         needs_zero = True
+        print(t)
+        print(time_steps)
         if not torch.any(time_steps == 0.0):
             needs_zero = False
             time_steps = torch.cat((torch.tensor([0]), time_steps), dim=0)
