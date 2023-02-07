@@ -257,7 +257,6 @@ class ODEBlock_torchdyn(nn.Module):
         t_span = torch.tensor([torch.min(x),torch.max(x)]).to("cuda:0")
         # Morphed points
         _, morphed = self.ode(x, t_span=t_span, save_at=time_steps)
-        print(morphed)
         # Morphed points contains an array which is of the form:
         # morphed[time_stamp][index]
         # As this list is in order of time we need to convert it back to how the time steps were before sorting
