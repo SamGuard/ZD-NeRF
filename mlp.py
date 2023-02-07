@@ -261,12 +261,12 @@ class ODEBlock_torchdyn(nn.Module):
             time_steps = torch.cat((torch.tensor([0]).to("cuda:0"), time_steps), dim=0)
 
         # Morphed points
-        print("t",t)
+        """print("t",t)
         print("x", x)
-        print("time_steps", time_steps)
+        print("time_steps", time_steps)"""
 
         _, morphed = self.ode(x, time_steps)
-        print(morphed)
+        morphed = morphed[1]
         if not needs_zero:
             morphed = morphed[1:]
         # Morphed points contains an array which is of the form:
