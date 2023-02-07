@@ -277,8 +277,10 @@ class ODEBlock_torchdyn(nn.Module):
         
         r = torch.linspace(0, x.shape[0] - 1, x.shape[0], dtype=torch.long)
         print(morphed)
+        print(args)
+        print(r)
         out = morphed[args, r]
-        print(out)
+        
         print("----")
 
         return out
