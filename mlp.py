@@ -12,9 +12,10 @@ import time
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from functorch import vmap,jacrev
+from functorch import vmap, jacrev
 
-from torchdiffeq import odeint_adjoint as odeint
+from torchdiffeq import odeint_adjoint as torchdiffeq_odeint
+from torchdyn.core import NeuralODE as torchdyn_NeuralODE
 
 
 class MLP(nn.Module):
@@ -53,11 +54,7 @@ class MLP(nn.Module):
             self.hidden_layers.append(
                 nn.Linear(in_features, self.net_width, bias=bias_enabled)
             )
-            if (
-                (self.skip_layer is not None)
-                and (i % self.skip_layer == 0)
-                and (i > 0)
-            ):
+            if (self.skip_layer is not None) and (i % self.skip_layer == 0) and (i > 0):
                 in_features = self.net_width + self.input_dim
             else:
                 in_features = self.net_width
@@ -95,11 +92,7 @@ class MLP(nn.Module):
         for i in range(self.net_depth):
             x = self.hidden_layers[i](x)
             x = self.hidden_activation(x)
-            if (
-                (self.skip_layer is not None)
-                and (i % self.skip_layer == 0)
-                and (i > 0)
-            ):
+            if (self.skip_layer is not None) and (i % self.skip_layer == 0) and (i > 0):
                 x = torch.cat([x, inputs], dim=-1)
         if self.output_enabled:
             x = self.output_layer(x)
@@ -191,9 +184,9 @@ class ODEfunc(nn.Module):
     def predict(self, x):
         for l in self.layers[:-1]:
             x = torch.tanh(l(x))
-            
+
         return self.layers[-1](x)
-    
+
     def forward(self, t, x):
         return x + 10.0 * t
 
@@ -214,30 +207,26 @@ class ODEfunc(nn.Module):
         dFz_dx = jac[:, 2, 0]
         dFy_dx = jac[:, 1, 0]
         dFx_dy = jac[:, 0, 1]
-        div_free = torch.stack([dFz_dy - dFy_dz, dFx_dz - dFz_dx, dFy_dx - dFx_dy], axis=1)
+        div_free = torch.stack(
+            [dFz_dy - dFy_dz, dFx_dz - dFz_dx, dFy_dx - dFx_dy], axis=1
+        )
         return div_free
 
 
-class ODEBlock(nn.Module):
+class ODEBlock_torchdiffeq(nn.Module):
     def __init__(self, odefunc):
         super().__init__()
         self.odefunc = odefunc
 
     def forward(self, t: torch.Tensor, x: torch.Tensor):
-        if(len(x) == 0):
+        if len(x) == 0:
             return torch.zeros_like(x)
 
         # Need to sort in order of time
         time_steps, args = torch.unique(t, sorted=True, return_inverse=True)
 
         # Morphed points
-        morphed = odeint(
-            self.odefunc,
-            x,
-            time_steps,
-            rtol=0.1,
-            atol=1.0
-        )
+        morphed = odeint(self.odefunc, x, time_steps, rtol=1e-4, atol=1e-3)
         # Morphed points contains an array which is of the form:
         # morphed[time_stamp][index]
         # As this list is in order of time we need to convert it back to how the time steps were before sorting
@@ -245,7 +234,37 @@ class ODEBlock(nn.Module):
         # Then indexing by r gives the morphed point at the time given
         r = torch.linspace(0, x.shape[0] - 1, x.shape[0], dtype=torch.long)
 
-        out = morphed[args,r]
+        out = morphed[args, r]
+
+        return out
+
+
+class ODEBlock_torchdyn(nn.Module):
+    def __init__(self, odefunc):
+        super().__init__()
+        self.odefunc = odefunc
+        self.ode = torchdyn_NeuralODE(
+            self.odefunc, sensitivity="adjoint", solver="dopri5"
+        ).to("cuda:0")
+
+    def forward(self, t: torch.Tensor, x: torch.Tensor):
+        if len(x) == 0:
+            return torch.zeros_like(x)
+
+        # Need to sort in order of time
+        time_steps, args = torch.unique(t, sorted=True, return_inverse=True)
+
+        # Morphed points
+        morphed = self.ode(x, time_steps)
+        print(morphed)
+        # Morphed points contains an array which is of the form:
+        # morphed[time_stamp][index]
+        # As this list is in order of time we need to convert it back to how the time steps were before sorting
+        # To this we index by the args array, which will give all points at a given time
+        # Then indexing by r gives the morphed point at the time given
+        r = torch.linspace(0, x.shape[0] - 1, x.shape[0], dtype=torch.long)
+
+        out = morphed[args, r]
 
         return out
 
@@ -265,9 +284,7 @@ class SinusoidalEncoder(nn.Module):
 
     @property
     def latent_dim(self) -> int:
-        return (
-            int(self.use_identity) + (self.max_deg - self.min_deg) * 2
-        ) * self.x_dim
+        return (int(self.use_identity) + (self.max_deg - self.min_deg) * 2) * self.x_dim
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -336,8 +353,7 @@ class DNeRFRadianceField(nn.Module):
         self.posi_encoder = SinusoidalEncoder(3, 0, 4, True)
         self.time_encoder = SinusoidalEncoder(1, 0, 4, True)
         self.warp = MLP(
-            input_dim=self.posi_encoder.latent_dim
-            + self.time_encoder.latent_dim,
+            input_dim=self.posi_encoder.latent_dim + self.time_encoder.latent_dim,
             output_dim=3,
             net_depth=4,
             net_width=64,
@@ -373,7 +389,7 @@ class ZD_NeRFRadianceField(nn.Module):
         super().__init__()
         self.posi_encoder = SinusoidalEncoder(3, 0, 4, True)
         self.time_encoder = SinusoidalEncoder(1, 0, 4, True)
-        self.warp = ODEBlock(ODEfunc(input_dim=4, output_dim=3, width=64))
+        self.warp = ODEBlock_torchdyn(ODEfunc(input_dim=4, output_dim=3, width=64))
         self.nerf = VanillaNeRFRadianceField()
 
     def query_opacity(self, x, timestamps, step_size):
