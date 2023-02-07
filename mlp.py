@@ -280,7 +280,7 @@ class ODEBlock_torchdyn(nn.Module):
         print(args)
         print(r)
         out = morphed[args, r]
-        print(out.shape)
+        print("out", out.shape, "x", x.shape)
         
         print("----")
 
