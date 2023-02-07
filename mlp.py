@@ -248,21 +248,19 @@ class ODEBlock_torchdyn(nn.Module):
     def forward(self, t: torch.Tensor, x: torch.Tensor):
         if len(x) == 0:
             return torch.zeros_like(x)
-        if len(t) == 1 and t[0] == 0.0:
-            return x
 
         # Need to sort in order of time
         time_steps, args = torch.unique(t, sorted=True, return_inverse=True)
 
+        if len(time_steps) == 1 and time_steps[0] == 0.0:
+            return x
+
         needs_zero = True
-        print(t)
-        print(time_steps)
         if not torch.any(time_steps == 0.0):
             needs_zero = False
             time_steps = torch.cat((torch.tensor([0]), time_steps), dim=0)
 
         # Morphed points
-        print(time_steps)
         _, morphed = self.ode(x, time_steps)
 
         if not needs_zero:
