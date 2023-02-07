@@ -187,10 +187,7 @@ class ODEfunc(nn.Module):
 
         return self.layers[-1](x)
 
-    def forward(self, x, t):
-        print(x)
-        print(t)
-        print(0/0)
+    def forward(self, t, x):
         return x + 10.0 * t
 
     def forward_temp(self, t, x):
@@ -229,7 +226,7 @@ class ODEBlock_torchdiffeq(nn.Module):
         time_steps, args = torch.unique(t, sorted=True, return_inverse=True)
 
         # Morphed points
-        morphed = odeint(self.odefunc, x, time_steps, rtol=1e-4, atol=1e-3)
+        morphed = torchdiffeq_odeint(self.odefunc, x, time_steps, rtol=1e-4, atol=1e-3)
         # Morphed points contains an array which is of the form:
         # morphed[time_stamp][index]
         # As this list is in order of time we need to convert it back to how the time steps were before sorting
