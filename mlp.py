@@ -226,9 +226,6 @@ class ODEBlock(nn.Module):
     def forward(self, t: torch.Tensor, x: torch.Tensor):
         if(len(x) == 0):
             return torch.zeros_like(x)
-        
-        x[:,0] += t * 10.0
-        return x 
 
         # Need to sort in order of time
         time_steps, args = torch.unique(t, sorted=True, return_inverse=True)
@@ -238,6 +235,8 @@ class ODEBlock(nn.Module):
             self.odefunc,
             x,
             time_steps,
+            rtol=0.1,
+            atol=1.0
         )
         # Morphed points contains an array which is of the form:
         # morphed[time_stamp][index]
