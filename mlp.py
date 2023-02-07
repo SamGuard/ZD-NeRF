@@ -187,7 +187,7 @@ class ODEfunc(nn.Module):
 
         return self.layers[-1](x)
 
-    def forward(self, t, x):
+    def forward(self, x, t):
         return x + 10.0 * t
 
     def forward_temp(self, t, x):
@@ -218,7 +218,7 @@ class ODEBlock_torchdiffeq(nn.Module):
         super().__init__()
         self.odefunc = odefunc
 
-    def forward(self, x: torch.Tensor, t: torch.Tensor):
+    def forward(self, t: torch.Tensor, x: torch.Tensor):
         if len(x) == 0:
             return torch.zeros_like(x)
 
