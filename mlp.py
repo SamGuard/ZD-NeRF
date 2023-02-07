@@ -262,7 +262,6 @@ class ODEBlock_torchdyn(nn.Module):
 
         # Morphed points
         _, morphed = self.ode(x, time_steps)
-        print(morphed)
         if not needs_zero:
             morphed = morphed[1:]
 
@@ -271,9 +270,10 @@ class ODEBlock_torchdyn(nn.Module):
         # As this list is in order of time we need to convert it back to how the time steps were before sorting
         # To this we index by the args array, which will give all points at a given time
         # Then indexing by r gives the morphed point at the time given
-
+        
         r = torch.linspace(0, x.shape[0] - 1, x.shape[0], dtype=torch.long)
-
+        print(morphed, args, r)
+        print("----")
         out = morphed[args, r]
 
         return out
