@@ -261,9 +261,11 @@ class ODEBlock_torchdyn(nn.Module):
             time_steps = torch.cat((torch.tensor([0]).to("cuda:0"), time_steps), dim=0)
 
         # Morphed points
+        print("t",t)
+        print("x", x)
+        print("time_steps", time_steps)
+        
         _, morphed = self.ode(x, time_steps)
-        print(morphed[0])
-        print(morphed[1])
         if not needs_zero:
             morphed = morphed[1:]
 
@@ -274,8 +276,7 @@ class ODEBlock_torchdyn(nn.Module):
         # Then indexing by r gives the morphed point at the time given
         
         r = torch.linspace(0, x.shape[0] - 1, x.shape[0], dtype=torch.long)
-        print(morphed, args, r)
-        print("----")
+
         out = morphed[args, r]
 
         return out
