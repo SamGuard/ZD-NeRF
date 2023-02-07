@@ -250,13 +250,16 @@ class ODEBlock_torchdyn(nn.Module):
     def forward(self, t: torch.Tensor, x: torch.Tensor):
         if len(x) == 0:
             return torch.zeros_like(x)
+        if len(t) == 1:
+            return x
 
         # Need to sort in order of time
         time_steps, args = torch.unique(t, sorted=True, return_inverse=True)
         
-        t_span = torch.tensor([torch.min(x),torch.max(x)]).to("cuda:0")
+        #t_span = torch.tensor([torch.min(x),torch.max(x)]).to("cuda:0")
+
         # Morphed points
-        _, morphed = self.ode(x, t_span=t_span, save_at=time_steps)
+        _, morphed = self.ode(x, time_steps)
         # Morphed points contains an array which is of the form:
         # morphed[time_stamp][index]
         # As this list is in order of time we need to convert it back to how the time steps were before sorting
