@@ -255,7 +255,7 @@ class ODEBlock_torchdyn(nn.Module):
         time_steps, args = torch.unique(t, sorted=True, return_inverse=True)
         t_span = torch.tensor([torch.min(x),torch.max(x)])
         # Morphed points
-        morphed = self.ode(x, t_span=t_span, save_at=time_steps)
+        _, morphed = self.ode(x, t_span=t_span, save_at=time_steps)
         print(morphed)
         # Morphed points contains an array which is of the form:
         # morphed[time_stamp][index]
