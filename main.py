@@ -124,7 +124,7 @@ if __name__ == "__main__":
         root_fp=data_root_fp,
         split=args.train_split,
         num_rays=target_sample_batch_size // render_n_samples,
-        batch_over_images=False
+        batch_over_images=True
     )
     train_dataset.images = train_dataset.images.to(device)
     train_dataset.camtoworlds = train_dataset.camtoworlds.to(device)
@@ -153,7 +153,7 @@ if __name__ == "__main__":
     tic = time.time()
     if not args.just_render:
         for epoch in range(10000000):
-            for i in range(1):#range(len(train_dataset)):
+            for i in range(len(train_dataset)):
                 radiance_field.train()
                 data = train_dataset[i]
 
@@ -299,7 +299,7 @@ if __name__ == "__main__":
 
         with torch.no_grad():
             for t in map(lambda x: x / num_time, range(num_time)):
-                for i in [0]:#range(len(test_dataset)):
+                for i in [3]:#range(len(test_dataset)):
                     data = test_dataset[i]
                     render_bkgd = data["color_bkgd"]
                     rays = data["rays"]

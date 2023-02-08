@@ -187,10 +187,10 @@ class ODEfunc(nn.Module):
 
         return self.layers[-1](x)
 
-    def forward(self, t, x):
+    def test_func(self, t, x):
         return x + 10.0 * t
 
-    def forward_temp(self, t, x):
+    def forward(self, t, x):
         x = torch.cat(
             (x, torch.zeros(size=(x.shape[0], 1), device="cuda:0") + t), dim=1
         )
@@ -261,12 +261,12 @@ class ODEBlock_torchdyn(nn.Module):
             time_steps = torch.cat((torch.tensor([0]).to("cuda:0"), time_steps), dim=0)
 
         # Morphed points
-        print("t",t)
+        """print("t",t)
         print("x", x)
-        print("time_steps", time_steps)
+        print("time_steps", time_steps)"""
 
         _, morphed = self.ode(x, time_steps)
-        print("pre cut", morphed.shape)
+        #print("pre cut", morphed.shape)
 
         if not needs_zero and len(morphed) > 1:
             morphed = morphed[1:]
@@ -278,12 +278,12 @@ class ODEBlock_torchdyn(nn.Module):
         # Then indexing by r gives the morphed point at the time given
         
         r = torch.linspace(0, x.shape[0] - 1, x.shape[0], dtype=torch.long)
-        print("morphed", morphed)
+        """print("morphed", morphed)
         print("args", args)
-        print("r", r)
+        print("r", r)"""
         out = morphed[args, r]
         
-        print("----")
+        #print("----")
 
         return out
 
