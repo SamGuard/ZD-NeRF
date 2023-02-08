@@ -218,7 +218,7 @@ if __name__ == "__main__":
                         f"n_rendering_samples={n_rendering_samples:d} | num_rays={len(pixels):d} |"
                     )
                     
-                if step % 100 == 0:
+                if step % 1000 == 0:
                     torch.save(
                         radiance_field.state_dict(),
                         os.path.join(
