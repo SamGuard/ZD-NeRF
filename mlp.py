@@ -243,7 +243,7 @@ class ODEBlock_torchdyn(nn.Module):
     def __init__(self, odefunc):
         super().__init__()
         self.odefunc = odefunc
-        self.ode = torchdyn_NeuralODE(self.odefunc, solver="dopri5").to("cuda:0")
+        self.ode = torchdyn_NeuralODE(self.odefunc, solver="dopri5", sensitivity="adjoint").to("cuda:0")
 
     def forward(self, t: torch.Tensor, x: torch.Tensor):
         if len(x) == 0:
