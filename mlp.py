@@ -226,6 +226,8 @@ class ODEBlock_torchdiffeq(nn.Module):
         time_steps, args = torch.unique(t, sorted=True, return_inverse=True)
 
         print("x", x, x.shape)
+        print("t", t, t.shape)
+        print("time_steps", time_steps, time_steps.shape)
         # Morphed points
         morphed = torchdiffeq_odeint(self.odefunc, x, time_steps, rtol=1e-4, atol=1e-3)
         print("morphed", morphed, morphed.shape)
