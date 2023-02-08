@@ -225,8 +225,10 @@ class ODEBlock_torchdiffeq(nn.Module):
         # Need to sort in order of time
         time_steps, args = torch.unique(t, sorted=True, return_inverse=True)
 
+        print("x", x)
         # Morphed points
         morphed = torchdiffeq_odeint(self.odefunc, x, time_steps, rtol=1e-4, atol=1e-3)
+        print("morphed", morphed)
         # Morphed points contains an array which is of the form:
         # morphed[time_stamp][index]
         # As this list is in order of time we need to convert it back to how the time steps were before sorting
@@ -235,6 +237,7 @@ class ODEBlock_torchdiffeq(nn.Module):
         r = torch.linspace(0, x.shape[0] - 1, x.shape[0], dtype=torch.long)
 
         out = morphed[args, r]
+        print("out", out)
 
         return out
 
