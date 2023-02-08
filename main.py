@@ -68,9 +68,10 @@ if __name__ == "__main__":
     parser.add_argument("--cone_angle", type=float, default=0.0)
     parser.add_argument("--max_steps", type=int, default=50000)
     parser.add_argument("--model", type=str, default="")
+    parser.add_argument("--samples", type=int, default=1024)
     args = parser.parse_args()
 
-    render_n_samples = 1024
+    render_n_samples = args.samples
 
     # create output folders
     try:
