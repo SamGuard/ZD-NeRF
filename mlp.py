@@ -265,8 +265,9 @@ class ODEBlock_torchdyn(nn.Module):
         print("x", x)
         print("time_steps", time_steps)
 
-        _, morphed = self.ode(x, time_steps)
+        something, morphed = self.ode(x, time_steps)
         print("pre cut", morphed.shape)
+        print("something", something)
 
         if not needs_zero:
             morphed = morphed[1:]
