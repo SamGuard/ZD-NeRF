@@ -265,12 +265,13 @@ class ODEBlock_torchdyn(nn.Module):
         print("x", x)
         print("time_steps", time_steps)
 
-        something, morphed = self.ode(x, time_steps)
+        _, morphed = self.ode(x, time_steps)
         print("pre cut", morphed.shape)
         print("something", something)
 
-        if not needs_zero:
+        if not needs_zero and len(morphed) > 1:
             morphed = morphed[1:]
+    
         # Morphed points contains an array which is of the form:
         # morphed[time_stamp][index]
         # As this list is in order of time we need to convert it back to how the time steps were before sorting
