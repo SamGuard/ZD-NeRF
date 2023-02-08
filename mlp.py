@@ -225,6 +225,9 @@ class ODEBlock_torchdiffeq(nn.Module):
         # Need to sort in order of time
         time_steps, args = torch.unique(t, sorted=True, return_inverse=True)
 
+        if len(time_steps) == 1 and time_steps[0] == 0.0:
+            return x
+
         print("x", x, x.shape)
         print("t", t, t.shape)
         print("time_steps", time_steps, time_steps.shape)
@@ -240,7 +243,6 @@ class ODEBlock_torchdiffeq(nn.Module):
 
         out = morphed[args, r]
         print("out", out, out.shape)
-        print(0/0)
 
         return out
 
