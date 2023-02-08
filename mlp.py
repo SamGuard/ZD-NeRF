@@ -187,10 +187,10 @@ class ODEfunc(nn.Module):
 
         return self.layers[-1](x)
 
-    def test_func(self, t, x):
-        return x + 10.0 * t
-
     def forward(self, t, x):
+        return x * 0 + 1
+
+    def test_func(self, t, x):
         x = torch.cat(
             (x, torch.zeros(size=(x.shape[0], 1), device="cuda:0") + t), dim=1
         )
