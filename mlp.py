@@ -267,7 +267,6 @@ class ODEBlock_torchdyn(nn.Module):
 
         _, morphed = self.ode(x, time_steps)
         print("pre cut", morphed.shape)
-        print("something", something)
 
         if not needs_zero and len(morphed) > 1:
             morphed = morphed[1:]
