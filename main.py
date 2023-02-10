@@ -124,7 +124,7 @@ if __name__ == "__main__":
         subject_id=args.scene,
         root_fp=data_root_fp,
         split=args.train_split,
-        num_rays=target_sample_batch_size // render_n_samples,
+        num_rays=1024#target_sample_batch_size // render_n_samples,
         #batch_over_images=False
     )
     train_dataset.images = train_dataset.images.to(device)
