@@ -163,7 +163,7 @@ if __name__ == "__main__":
                 pixels = data["pixels"]
                 timestamps = data["timestamps"]
                 #timestamps = torch.zeros(size=(pixels.shape[0],1), device="cuda:0") + data["timestamps"]
-                print(rays)
+
                 # update occupancy grid
                 occupancy_grid.every_n_step(
                     step=step,
@@ -171,6 +171,7 @@ if __name__ == "__main__":
                         x, timestamps, render_step_size
                     ),
                 )
+                print("occupancy done")
 
                 # render
                 rgb, acc, depth, n_rendering_samples = render_image(
