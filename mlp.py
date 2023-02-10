@@ -216,6 +216,7 @@ class ODENetwork(nn.Module):
         for l in self.layers[:-1]:
             x = torch.tanh(l(x))
 
+        print("done")
         return self.layers[-1](x)
 
 
