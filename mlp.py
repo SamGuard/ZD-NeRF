@@ -228,7 +228,7 @@ class ODEFunc(nn.Module):
         self.predict = vmap(self.u_fn, in_dims=(None, None, 0))
 
     def forward(self, t, x):
-        print(x)
+        print(x.shape)
         return self.predict(self.params, t, x)
 
 
