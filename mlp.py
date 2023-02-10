@@ -210,13 +210,11 @@ class ODENetwork(nn.Module):
         self.layers.to("cuda:0")
 
     def forward(self, t, x):
-        print(t)
         x = torch.cat((x, t.reshape(1)), dim=0).to("cuda:0")
 
         for l in self.layers[:-1]:
             x = torch.tanh(l(x))
 
-        print("done")
         return self.layers[-1](x)
 
 
@@ -439,7 +437,7 @@ class ZD_NeRFRadianceField(nn.Module):
         self.posi_encoder = SinusoidalEncoder(3, 0, 4, True)
         self.time_encoder = SinusoidalEncoder(1, 0, 4, True)
         #self.warp = ODEBlock_torchdyn(ODEfunc(input_dim=4, output_dim=3, width=32, depth=4))
-        self.warp = ODEBlock_torchdiffeq(ODEFunc(input_dim=4, output_dim=3, width=128, depth=4))
+        self.warp = ODEBlock_torchdiffeq(ODEFunc(input_dim=4, output_dim=3, width=32, depth=4))
         self.nerf = VanillaNeRFRadianceField()
 
     def query_opacity(self, x, timestamps, step_size):
