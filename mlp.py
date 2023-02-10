@@ -207,6 +207,8 @@ class ODENetwork(nn.Module):
             self.layers.append(nn.Linear(width, width))
         self.layers.append(nn.Linear(width, output_dim))
 
+        self.layers.to("cuda:0")
+
     def forward(self, t, x):
         x = torch.cat((x, t.reshape(1)), dim=0).to("cuda:0")
 
