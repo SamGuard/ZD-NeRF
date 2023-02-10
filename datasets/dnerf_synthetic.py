@@ -178,6 +178,7 @@ class SubjectLoader(torch.utils.data.Dataset):
                 0, self.HEIGHT, size=(num_rays,), device=self.images.device
             )
         else:
+            print("hello there")
             image_id = [index]
             x, y = torch.meshgrid(
                 torch.arange(self.WIDTH, device=self.images.device),
