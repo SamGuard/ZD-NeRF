@@ -117,14 +117,14 @@ if __name__ == "__main__":
     )
     # setup the dataset
     data_root_fp = "/home/ruilongli/data/dnerf/"
-    target_sample_batch_size = 1 << 16
+    target_sample_batch_size = 1 << 10
     grid_resolution = 32
 
     train_dataset = SubjectLoader(
         subject_id=args.scene,
         root_fp=data_root_fp,
         split=args.train_split,
-        num_rays=1024#target_sample_batch_size // render_n_samples,
+        num_rays=target_sample_batch_size // render_n_samples,
         #batch_over_images=False
     )
     train_dataset.images = train_dataset.images.to(device)
@@ -171,8 +171,6 @@ if __name__ == "__main__":
                         x, timestamps, render_step_size
                     ),
                 ) 
-
-                print(rays[0].shape)
 
                 # render
                 rgb, acc, depth, n_rendering_samples = render_image(
