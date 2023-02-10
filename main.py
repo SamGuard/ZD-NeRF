@@ -117,7 +117,7 @@ if __name__ == "__main__":
     )
     # setup the dataset
     data_root_fp = "/home/ruilongli/data/dnerf/"
-    target_sample_batch_size = 1 << 10
+    target_sample_batch_size = 1 << 14
     grid_resolution = 32
 
     train_dataset = SubjectLoader(
