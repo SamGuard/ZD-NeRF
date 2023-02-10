@@ -164,6 +164,39 @@ class NerfMLP(nn.Module):
         return raw_rgb, raw_sigma
 
 
+def div(u):
+    """Accepts a function u:R^D -> R^D."""
+    J = jacrev(u)
+    return lambda x: torch.trace(J(x))
+
+
+def build_divfree_vector_field(module):
+    """Returns an unbatched vector field, i.e. assumes input is a 1D tensor."""
+
+    F_fn, params = make_functional(module)
+
+    J_fn = jacrev(F_fn, argnums=2)
+
+    def A_fn(params, t, x):
+        J = J_fn(params, t, x)
+        A = J - J.T
+        return A
+
+    def A_flat_fn(params, t, x):
+        A = A_fn(params, t, x)
+        A_flat = A.reshape(-1)
+        return A_flat
+
+    def ddF(params, t, x):
+        D = x.nelement()
+        dA_flat = jacrev(A_flat_fn, argnums=2)(params, t, x)
+        Jac_all = dA_flat.reshape(D, D, D)
+        ddF = vmap(torch.trace)(Jac_all)
+        return ddF
+
+    return ddF, params, A_fn
+
+
 class ODENetwork(nn.Module):
     def __init__(self, input_dim, output_dim, width=32, depth=8):
         super().__init__()
@@ -187,37 +220,8 @@ class ODEFunc(nn.Module):
     def __init__(self, input_dim, output_dim, width=32, depth=8):
         super().__init__()
 
-        self.model = ODENetwork(input_dim, output_dim, width, depth)
-        self.build_divfree_vector_field()
-        #self.u_fn, self.params, _ = self.build_divfree_vector_field(self.model)
-        #self.predict = vmap(self.u_fn, in_dims=(None, None, 0))
-
-    def build_divfree_vector_field(self):
-        """Returns an unbatched vector field, i.e. assumes input is a 1D tensor."""
-
-        F_fn, params = make_functional(self.model)
-
-        J_fn = jacrev(F_fn, argnums=2)
-
-        def A_fn(params, t, x):
-            J = J_fn(params, t, x)
-            A = J - J.T
-            return A
-
-        def A_flat_fn(params, t, x):
-            A = A_fn(params, t, x)
-            A_flat = A.reshape(-1)
-            return A_flat
-
-        def ddF(params, t, x):
-            D = x.nelement()
-            dA_flat = jacrev(A_flat_fn, argnums=2)(params, t, x)
-            Jac_all = dA_flat.reshape(D, D, D)
-            ddF = vmap(torch.trace)(Jac_all)
-            return ddF
-
-        self.u_fn = ddF 
-        self.params = params
+        self.model = ODENetwork(input_dim, output_dim, width, depth).to("cuda:0")
+        self.u_fn, self.params, _ = build_divfree_vector_field(self.model)
         self.predict = vmap(self.u_fn, in_dims=(None, None, 0))
 
     def forward(self, t, x):
