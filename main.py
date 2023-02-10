@@ -289,16 +289,15 @@ if __name__ == "__main__":
         step = 0
         num_time = 10
         timestamps = torch.tensor([[0.0]], dtype=torch.float32).to(device)
-
-        for i in range(10):
-            occupancy_grid._update(
-                step=step,
-                occ_eval_fn=lambda x: radiance_field.query_opacity(
-                    x, timestamps, render_step_size
-                ),
-            )
-
         with torch.no_grad():
+            for i in range(10):
+                occupancy_grid._update(
+                    step=step,
+                    occ_eval_fn=lambda x: radiance_field.query_opacity(
+                        x, timestamps, render_step_size
+                    ),
+                )
+        
             for t in map(lambda x: x / num_time, range(num_time)):
                 for i in [3]:#range(len(test_dataset)):
                     data = test_dataset[i]

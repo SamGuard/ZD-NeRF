@@ -207,8 +207,6 @@ class ODENetwork(nn.Module):
             self.layers.append(nn.Linear(width, width))
         self.layers.append(nn.Linear(width, output_dim))
 
-        self.layers.to("cuda:0")
-
     def forward(self, t, x):
         x = torch.cat((x, t.reshape(1)), dim=0).to("cuda:0")
 
@@ -222,9 +220,8 @@ class ODEFunc(nn.Module):
     def __init__(self, input_dim, output_dim, width=32, depth=8):
         super().__init__()
 
-        self.u_fn, self.params, _ = build_divfree_vector_field(
-            ODENetwork(input_dim, output_dim, width, depth)
-        )
+        self.model = ODENetwork(input_dim, output_dim, width, depth)
+        self.u_fn, self.params, _ = build_divfree_vector_field(self.model)
         self.predict = vmap(self.u_fn, in_dims=(None, None, 0))
 
     def forward(self, t, x):
