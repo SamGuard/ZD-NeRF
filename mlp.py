@@ -12,7 +12,7 @@ import time
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from functorch import vmap, jacrev
+from functorch import make_functional, vmap, jacrev
 
 from torchdiffeq import odeint_adjoint as torchdiffeq_odeint
 from torchdyn.core import NeuralODE as torchdyn_NeuralODE
@@ -164,7 +164,40 @@ class NerfMLP(nn.Module):
         return raw_rgb, raw_sigma
 
 
-class ODEfunc(nn.Module):
+def div(u):
+    """Accepts a function u:R^D -> R^D."""
+    J = jacrev(u)
+    return lambda x: torch.trace(J(x))
+
+
+def build_divfree_vector_field(module):
+    """Returns an unbatched vector field, i.e. assumes input is a 1D tensor."""
+
+    F_fn, params = make_functional(module)
+
+    J_fn = jacrev(F_fn, argnums=2)
+
+    def A_fn(params, t, x):
+        J = J_fn(params, t, x)
+        A = J - J.T
+        return A
+
+    def A_flat_fn(params, t, x):
+        A = A_fn(params, t, x)
+        A_flat = A.reshape(-1)
+        return A_flat
+
+    def ddF(params, t, x):
+        D = x.nelement()
+        dA_flat = jacrev(A_flat_fn, argnums=2)(params, t, x)
+        Jac_all = dA_flat.reshape(D, D, D)
+        ddF = vmap(torch.trace)(Jac_all)
+        return ddF
+
+    return ddF, params, A_fn
+
+
+class ODENetwork(nn.Module):
     def __init__(self, input_dim, output_dim, width=32, depth=8):
         super().__init__()
         self.layers = nn.ModuleList()
@@ -174,43 +207,26 @@ class ODEfunc(nn.Module):
             self.layers.append(nn.Linear(width, width))
         self.layers.append(nn.Linear(width, output_dim))
 
-        self.jacobian_predict_func = vmap(jacrev(self.predict, argnums=(0)), 0, 0)
+    def forward(self, t, x):
+        x = torch.cat((x, t.reshape(1)), dim=0)
 
-        """for l in self.layers:
-            nn.init.normal_(l.weight, mean=0, std=0.0001)
-            # nn.init.constant_(l.weight, 0.001)
-            nn.init.constant_(l.bias, val=0)"""
-
-    def predict(self, x):
         for l in self.layers[:-1]:
             x = torch.tanh(l(x))
 
         return self.layers[-1](x)
 
-    def test_func(self, t, x):
-        return x * 0 + 1
+
+class ODEFunc(nn.Module):
+    def __init__(self, input_dim, output_dim, width=32, depth=8):
+        super().__init__()
+
+        self.u_fn, self.params, _ = build_divfree_vector_field(
+            ODENetwork(input_dim, output_dim, width, depth)
+        )
+        self.predict = vmap(self.u_fn, in_dims=(None, None, 0))
 
     def forward(self, t, x):
-        x = torch.cat(
-            (x, torch.zeros(size=(x.shape[0], 1), device="cuda:0") + t), dim=1
-        )
-        return self.predict(x)
-
-    def forward_zero_div(self, t, x):
-        x = torch.cat(
-            (x, torch.zeros(size=(x.shape[0], 1), device="cuda:0") + t), dim=1
-        )
-        jac = torch.squeeze(self.jacobian_predict_func(x))
-        dFz_dy = jac[:, 2, 1]
-        dFy_dz = jac[:, 1, 2]
-        dFx_dz = jac[:, 0, 2]
-        dFz_dx = jac[:, 2, 0]
-        dFy_dx = jac[:, 1, 0]
-        dFx_dy = jac[:, 0, 1]
-        div_free = torch.stack(
-            [dFz_dy - dFy_dz, dFx_dz - dFz_dx, dFy_dx - dFx_dy], axis=1
-        )
-        return div_free
+        return self.predict(self.params, t, x)
 
 
 class ODEBlock_torchdiffeq(nn.Module):
@@ -419,7 +435,7 @@ class ZD_NeRFRadianceField(nn.Module):
         self.posi_encoder = SinusoidalEncoder(3, 0, 4, True)
         self.time_encoder = SinusoidalEncoder(1, 0, 4, True)
         #self.warp = ODEBlock_torchdyn(ODEfunc(input_dim=4, output_dim=3, width=32, depth=4))
-        self.warp = ODEBlock_torchdiffeq(ODEfunc(input_dim=4, output_dim=3, width=128, depth=4))
+        self.warp = ODEBlock_torchdiffeq(ODEFunc(input_dim=4, output_dim=3, width=128, depth=4))
         self.nerf = VanillaNeRFRadianceField()
 
     def query_opacity(self, x, timestamps, step_size):
