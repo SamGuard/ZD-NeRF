@@ -172,6 +172,8 @@ if __name__ == "__main__":
                     ),
                 )
 
+                print(rays.shape)
+
                 # render
                 rgb, acc, depth, n_rendering_samples = render_image(
                     radiance_field,
