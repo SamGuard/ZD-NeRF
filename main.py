@@ -170,9 +170,9 @@ if __name__ == "__main__":
                     occ_eval_fn=lambda x: radiance_field.query_opacity(
                         x, timestamps, render_step_size
                     ),
-                )
+                ) 
 
-                print(rays.shape)
+                print(rays[0].shape)
 
                 # render
                 rgb, acc, depth, n_rendering_samples = render_image(
