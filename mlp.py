@@ -228,7 +228,6 @@ class ODEFunc(nn.Module):
         self.predict = vmap(self.u_fn, in_dims=(None, None, 0))
 
     def forward(self, t, x):
-        print(x.shape)
         return self.predict(self.params, t, x)
 
 
@@ -238,6 +237,7 @@ class ODEBlock_torchdiffeq(nn.Module):
         self.odefunc = odefunc
 
     def forward(self, t: torch.Tensor, x: torch.Tensor):
+        print(x.shape)
         if len(x) == 0:
             return torch.zeros_like(x)
 
