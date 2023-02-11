@@ -72,7 +72,7 @@ class SubjectLoader(torch.utils.data.Dataset):
         "trex",
     ]
 
-    WIDTH, HEIGHT = 400, 400
+    WIDTH, HEIGHT = 800, 800
     NEAR, FAR = 2.0, 6.0
     OPENGL_CAMERA = True
 
