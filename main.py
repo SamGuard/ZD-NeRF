@@ -69,9 +69,11 @@ if __name__ == "__main__":
     parser.add_argument("--max_steps", type=int, default=50000)
     parser.add_argument("--model", type=str, default="")
     parser.add_argument("--samples", type=int, default=1024)
+    parser.add_argument("--train_in_order", type=bool, default=False)
     args = parser.parse_args()
 
     render_n_samples = args.samples
+    train_in_order = args.train_in_order
 
     # create output folders
     try:
@@ -117,7 +119,7 @@ if __name__ == "__main__":
     )
     # setup the dataset
     data_root_fp = "/home/ruilongli/data/dnerf/"
-    target_sample_batch_size = 1 << 14
+    target_sample_batch_size = 1 << 15
     grid_resolution = 32
 
     train_dataset = SubjectLoader(
@@ -156,7 +158,11 @@ if __name__ == "__main__":
         for epoch in range(10000000):
             for i in range(len(train_dataset)):
                 radiance_field.train()
-                data = train_dataset[i]
+
+                if(train_in_order == False):
+                    data = train_dataset[i]
+                else:
+                    pass
 
                 render_bkgd = data["color_bkgd"]
                 rays = data["rays"]
