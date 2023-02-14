@@ -165,11 +165,10 @@ if __name__ == "__main__":
                     scale = lambda x: x**2
                     r = scale(random.random())
                     index = 0
-                    step = 1.0 / len(train_dataset)
-                    while(r - step > 0):
-                        r -= step
+                    prob = 1.0 / len(train_dataset)
+                    while(r - prob > 0):
+                        r -= prob
                         index += 1
-                    print(index)
                     data = train_dataset[index]
                     
                 else:
