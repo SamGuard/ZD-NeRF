@@ -433,7 +433,7 @@ class ZD_NeRFRadianceField(nn.Module):
         self.posi_encoder = SinusoidalEncoder(3, 0, 4, True)
         self.time_encoder = SinusoidalEncoder(1, 0, 4, True)
         #self.warp = ODEBlock_torchdyn(ODEfunc(input_dim=4, output_dim=3, width=32, depth=4))
-        self.warp = ODEBlock_torchdiffeq(ODEFunc(input_dim=4, output_dim=3, width=32, depth=4))
+        self.warp = ODEBlock_torchdiffeq(ODEFunc(input_dim=4, output_dim=3, width=32, depth=5))
         self.nerf = VanillaNeRFRadianceField()
 
     def query_opacity(self, x, timestamps, step_size):
