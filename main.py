@@ -169,15 +169,17 @@ if __name__ == "__main__":
                     while(r - step > 0):
                         r -= step
                         index += 1
+                    print(index)
                     data = train_dataset[index]
+                    timestamps = torch.zeros(size=(pixels.shape[0],1), device="cuda:0") + data["timestamps"]
                 else:
                     data = train_dataset[i]
+                    timestamps = data["timestamps"]
                     
 
                 render_bkgd = data["color_bkgd"]
                 rays = data["rays"]
                 pixels = data["pixels"]
-                timestamps = data["timestamps"]
                 #timestamps = torch.zeros(size=(pixels.shape[0],1), device="cuda:0") + data["timestamps"]
 
                 # update occupancy grid
