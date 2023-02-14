@@ -6,6 +6,7 @@ import argparse
 import math
 import os
 import time
+import random
 
 import imageio
 import numpy as np
@@ -128,7 +129,7 @@ if __name__ == "__main__":
         root_fp=data_root_fp,
         split=args.train_split,
         num_rays=target_sample_batch_size // render_n_samples,
-        #batch_over_images=False
+        batch_over_images=not train_in_order
     )
     train_dataset.images = train_dataset.images.to(device)
     train_dataset.camtoworlds = train_dataset.camtoworlds.to(device)
@@ -160,10 +161,18 @@ if __name__ == "__main__":
             for i in range(len(train_dataset)):
                 radiance_field.train()
 
-                if(train_in_order == False):
-                    data = train_dataset[i]
+                if(train_in_order):
+                    scale = lambda x: x**2
+                    r = scale(random.random())
+                    index = 0
+                    step = 1.0 / len(train_dataset)
+                    while(r - step > 0):
+                        r -= step
+                        index += 1
+                    data = train_dataset[index]
                 else:
-                    pass
+                    data = train_dataset[i]
+                    
 
                 render_bkgd = data["color_bkgd"]
                 rays = data["rays"]
@@ -225,11 +234,11 @@ if __name__ == "__main__":
                         f"n_rendering_samples={n_rendering_samples:d} | num_rays={len(pixels):d} |"
                     )
                     
-                if step % 1000 == 0:
+                if step % 50 == 0:
                     torch.save(
                         radiance_field.state_dict(),
                         os.path.join(
-                            ".", "network_out", "zdnerf_nerf_step" + str(step) + ".pt"
+                            "/", "mnt", "io", "train_out", "zdnerf_nerf_step" + str(step) + ".pt"
                         ),
                     )
 
@@ -288,7 +297,7 @@ if __name__ == "__main__":
     else:
         radiance_field = ZD_NeRFRadianceField()
         radiance_field.load_state_dict(
-            torch.load(os.path.join(".", "network_out", args.model), device)
+            torch.load(os.path.join("/", "mnt", "io", "train_out", args.model), device)
         )
         
         radiance_field.to(device)
