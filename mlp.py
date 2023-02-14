@@ -248,6 +248,10 @@ class ODEBlock_torchdiffeq(nn.Module):
             needs_zero = False
             time_steps = torch.cat((torch.tensor([0]).to("cuda:0"), time_steps), dim=0)
 
+        print(time_steps)
+        print(x)
+        print(time_steps.shape)
+        print(x.shape)
         # Morphed points
         morphed = torchdiffeq_odeint(self.odefunc, x, time_steps, rtol=1e-4, atol=1e-3, )
         if not needs_zero:
@@ -263,7 +267,8 @@ class ODEBlock_torchdiffeq(nn.Module):
 
         return out
 
-
+"""
+Old code do not use
 class ODEBlock_torchdyn(nn.Module):
     def __init__(self, odefunc):
         super().__init__()
@@ -303,14 +308,12 @@ class ODEBlock_torchdyn(nn.Module):
         # Then indexing by r gives the morphed point at the time given
         
         r = torch.linspace(0, x.shape[0] - 1, x.shape[0], dtype=torch.long)
-        """print("morphed", morphed)
-        print("args", args)
-        print("r", r)"""
+        
         out = morphed[args, r]
         
         #print("----")
 
-        return out
+        return out"""
 
 
 class SinusoidalEncoder(nn.Module):
