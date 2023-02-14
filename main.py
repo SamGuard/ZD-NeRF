@@ -220,15 +220,15 @@ if __name__ == "__main__":
                 train_dataset.update_num_rays(num_rays)
                 alive_ray_mask = acc.squeeze(-1) > 0
 
-                if(step % 10 == 0):
-                    # compute loss
-                    loss = F.smooth_l1_loss(rgb[alive_ray_mask], pixels[alive_ray_mask])
+                # compute loss
+                loss = F.smooth_l1_loss(rgb[alive_ray_mask], pixels[alive_ray_mask])
+                # do not unscale it because we are using Adam.
+                grad_scaler.scale(loss).backward()
 
-                    optimizer.zero_grad()
-                    # do not unscale it because we are using Adam.
-                    grad_scaler.scale(loss).backward()
+                if(step % 10 == 0 and step > 0):                   
                     optimizer.step()
                     scheduler.step()
+                    optimizer.zero_grad()
 
                 if step % 1 == 0:
                     elapsed_time = time.time() - tic
