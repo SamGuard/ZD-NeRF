@@ -285,10 +285,10 @@ class ODEBlock_torchdyn(nn.Module):
             needs_zero = False
             time_steps = torch.cat((torch.tensor([0]).to("cuda:0"), time_steps), dim=0)
 
-        # Morphed points
-        """print("t",t)
-        print("x", x)
-        print("time_steps", time_steps)"""
+        print(time_steps)
+        print(x)
+        print(time_steps.shape)
+        print(x.shape)
 
         _, morphed = self.ode(x, time_steps)
         #print("pre cut", morphed.shape)
