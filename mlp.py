@@ -15,7 +15,7 @@ import torch.nn.functional as F
 from functorch import make_functional, vmap, jacrev
 
 from torchdiffeq import odeint_adjoint as torchdiffeq_odeint
-from torchdyn.core import NeuralODE as torchdyn_NeuralODE
+#from torchdyn.core import NeuralODE as torchdyn_NeuralODE
 
 
 class MLP(nn.Module):
