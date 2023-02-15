@@ -162,7 +162,7 @@ if __name__ == "__main__":
             for i in range(len(train_dataset)):
                 radiance_field.train()
 
-                if(train_in_order and step < 5000 ):
+                """if(train_in_order and step < 5000 ):
                     scale = lambda x: x**2
                     r = scale(random.random())
                     index = 0
@@ -173,13 +173,14 @@ if __name__ == "__main__":
                     data = train_dataset[index]
                     
                 else:
-                    data = train_dataset[i]                    
-
+                    data = train_dataset[i]  """      
+           
+                data = train_dataset[i]
                 render_bkgd = data["color_bkgd"]
                 rays = data["rays"]
                 pixels = data["pixels"]
 
-                if(train_in_order and step < 5000):
+                if(train_in_order):
                     timestamps = torch.zeros(size=(pixels.shape[0],1), device="cuda:0") + data["timestamps"]
                 else:
                     timestamps = data["timestamps"]
