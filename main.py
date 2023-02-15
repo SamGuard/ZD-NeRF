@@ -170,6 +170,8 @@ if __name__ == "__main__":
                 rays = data["rays"]
                 pixels = data["pixels"]
                 timestamps = data["timestamps"]
+                num_nonzeros = torch.count_nonzero(timestamps)
+                print(num_nonzeros, len(timestamps) - num_nonzeros)
 
                 # timestamps = torch.zeros(size=(pixels.shape[0],1), device="cuda:0") + data["timestamps"]
 
