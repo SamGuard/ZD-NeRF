@@ -47,7 +47,7 @@ if __name__ == "__main__":
             "standup",
             "trex",
             "basic_sphere",
-            "basic_sphere_2"
+            "basic_sphere_2",
         ],
         help="which scene to use",
     )
@@ -80,21 +80,20 @@ if __name__ == "__main__":
 
     # create output folders
     try:
-      os.mkdir("network_out")
+        os.mkdir("network_out")
     except:
-      pass
+        pass
 
     try:
-      os.stat("/mnt/io/")
-      RENDER_PATH = "/mnt/io/render_out"
+        os.stat("/mnt/io/")
+        RENDER_PATH = "/mnt/io/render_out"
     except:
-      RENDER_PATH = "./render_out"
-    
+        RENDER_PATH = "./render_out"
+
     try:
-      os.mkdir(RENDER_PATH)
+        os.mkdir(RENDER_PATH)
     except:
-      pass
-      
+        pass
 
     # setup the scene bounding box.
     contraction_type = ContractionType.AABB
@@ -130,7 +129,7 @@ if __name__ == "__main__":
         root_fp=data_root_fp,
         split=args.train_split,
         num_rays=target_sample_batch_size // render_n_samples,
-        #batch_over_images=not train_in_order
+        batch_over_images=not train_in_order,
     )
     train_dataset.images = train_dataset.images.to(device)
     train_dataset.camtoworlds = train_dataset.camtoworlds.to(device)
@@ -161,16 +160,18 @@ if __name__ == "__main__":
         for epoch in range(10000000):
             for i in range(len(train_dataset)):
                 radiance_field.train()
-           
-                data = train_dataset[i]
+
+                data = (
+                    train_dataset[i // 2]
+                    if step <= 5000
+                    else train_dataset[int(random.random()) * len(train_dataset)]
+                )
                 render_bkgd = data["color_bkgd"]
                 rays = data["rays"]
                 pixels = data["pixels"]
                 timestamps = data["timestamps"]
-                num_zero = torch.count_nonzero(timestamps)
-                print(num_zero, len(timestamps) - num_zero)
 
-                #timestamps = torch.zeros(size=(pixels.shape[0],1), device="cuda:0") + data["timestamps"]
+                # timestamps = torch.zeros(size=(pixels.shape[0],1), device="cuda:0") + data["timestamps"]
 
                 # update occupancy grid
                 occupancy_grid.every_n_step(
@@ -178,7 +179,7 @@ if __name__ == "__main__":
                     occ_eval_fn=lambda x: radiance_field.query_opacity(
                         x, timestamps, render_step_size
                     ),
-                ) 
+                )
 
                 # render
                 rgb, acc, depth, n_rendering_samples = render_image(
@@ -225,12 +226,16 @@ if __name__ == "__main__":
                         f"alive_ray_mask={alive_ray_mask.long().sum():d} | "
                         f"n_rendering_samples={n_rendering_samples:d} | num_rays={len(pixels):d} |"
                     )
-                    
+
                 if step % 100 == 0:
                     torch.save(
                         radiance_field.state_dict(),
                         os.path.join(
-                            "/", "mnt", "io", "train_out", "zdnerf_nerf_step" + str(step) + ".pt"
+                            "/",
+                            "mnt",
+                            "io",
+                            "train_out",
+                            "zdnerf_nerf_step" + str(step) + ".pt",
                         ),
                     )
 
@@ -291,7 +296,7 @@ if __name__ == "__main__":
         radiance_field.load_state_dict(
             torch.load(os.path.join("/", "mnt", "io", "train_out", args.model), device)
         )
-        
+
         radiance_field.to(device)
         radiance_field.eval()
         step = 0
@@ -305,9 +310,9 @@ if __name__ == "__main__":
                         x, timestamps, render_step_size
                     ),
                 )
-        
+
             for t in map(lambda x: x / num_time, range(num_time)):
-                for i in [0]:#range(len(test_dataset)):
+                for i in [0]:  # range(len(test_dataset)):
                     data = test_dataset[i]
                     render_bkgd = data["color_bkgd"]
                     rays = data["rays"]
@@ -357,5 +362,6 @@ if __name__ == "__main__":
                     step += 1
 
         import subprocess
+
         subprocess.run(["zip", "render.zip", "*.png"], cwd=RENDER_PATH)
         print("All done!")
