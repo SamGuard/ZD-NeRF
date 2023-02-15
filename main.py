@@ -47,6 +47,7 @@ if __name__ == "__main__":
             "standup",
             "trex",
             "basic_sphere",
+            "basic_sphere_2"
         ],
         help="which scene to use",
     )

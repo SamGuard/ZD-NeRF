@@ -70,7 +70,8 @@ class SubjectLoader(torch.utils.data.Dataset):
         "mutant",
         "standup",
         "trex",
-        "basic_sphere"
+        "basic_sphere",
+        "basic_spehere_2"
     ]
 
     WIDTH, HEIGHT = 800, 800

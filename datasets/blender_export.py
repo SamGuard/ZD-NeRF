@@ -6,16 +6,18 @@ import numpy as np
 
 DEBUG = False
 
-VIEWS = 20
+VIEWS = 5
 RESOLUTION = 800
-RESULTS_PATH = "/home/sam/projects/nerf_projects/data/basic_sphere/test"
+RESULTS_PATH = "/home/sam/projects/nerf_projects/data/basic_sphere_2/val"
 DEPTH_SCALE = 1.4
 COLOR_DEPTH = 8
 FORMAT = 'PNG'
 RANDOM_VIEWS = True
 UPPER_VIEWS = True
 CIRCLE_FIXED_START = (.3,0,0)
-LENGTH = 50
+LENGTH = 0
+TIME_STEPS = [0,25] # None if time varies, otherwise set to desired frame
+FILE_NAME_OFFSET = 0
 
 
 fp = bpy.path.abspath(f"//{RESULTS_PATH}")
@@ -125,47 +127,51 @@ out_data['frames'] = []
 if not RANDOM_VIEWS:
     b_empty.rotation_euler = CIRCLE_FIXED_START
 
-for i in range(0, VIEWS):
-    bpy.context.scene.frame_set(int(LENGTH*float(i+1)/VIEWS))
-    if DEBUG:
-        i = np.random.randint(0,VIEWS)
-        b_empty.rotation_euler[2] += radians(stepsize*i)
-    if RANDOM_VIEWS:
-        scene.render.filepath = fp + '/r_' + str(i)
-        if UPPER_VIEWS:
-            rot = np.random.uniform(0, 1, size=3) * (1,0,2*np.pi)
-            rot[0] = np.abs(np.arccos(1 - 2 * rot[0]) - np.pi/2)
-            b_empty.rotation_euler = rot
+for index,time in enumerate(TIME_STEPS):
+    bpy.context.scene.frame_set(time)
+    for i in range(0, VIEWS):
+        #bpy.context.scene.frame_set(int(LENGTH*float(i+1)/VIEWS))
+
+        if DEBUG:
+            i = np.random.randint(0,VIEWS)
+            b_empty.rotation_euler[2] += radians(stepsize*i)
+        if RANDOM_VIEWS:
+            scene.render.filepath = fp + '/r_' + str(i + index*VIEWS)
+            if UPPER_VIEWS:
+                rot = np.random.uniform(0, 1, size=3) * (1,0,2*np.pi)
+                rot[0] = np.abs(np.arccos(1 - 2 * rot[0]) - np.pi/2)
+                b_empty.rotation_euler = rot
+            else:
+                b_empty.rotation_euler = np.random.uniform(0, 2*np.pi, size=3)
         else:
-            b_empty.rotation_euler = np.random.uniform(0, 2*np.pi, size=3)
-    else:
-        print("Rotation {}, {}".format((stepsize * i), radians(stepsize * i)))
-        scene.render.filepath = fp + '/r_' + str(i)
+            print("Rotation {}, {}".format((stepsize * i), radians(stepsize * i)))
+            scene.render.filepath = fp + '/r_' + str(i)
 
-    # depth_file_output.file_slots[0].path = scene.render.filepath + "_depth_"
-    # normal_file_output.file_slots[0].path = scene.render.filepath + "_normal_"
+        # depth_file_output.file_slots[0].path = scene.render.filepath + "_depth_"
+        # normal_file_output.file_slots[0].path = scene.render.filepath + "_normal_"
 
-    if DEBUG:
-        break
-    else:
-        bpy.ops.render.render(write_still=True)  # render still
-
-    frame_data = {
-        'file_path': scene.render.filepath,
-        'rotation': radians(stepsize),
-        'transform_matrix': listify_matrix(cam.matrix_world)
-    }
-    out_data['frames'].append(frame_data)
-
-    if RANDOM_VIEWS:
-        if UPPER_VIEWS:
-            rot = np.random.uniform(0, 1, size=3) * (1,0,2*np.pi)
-            rot[0] = np.abs(np.arccos(1 - 2 * rot[0]) - np.pi/2)
-            b_empty.rotation_euler = rot
+        if DEBUG:
+            break
         else:
-            b_empty.rotation_euler = np.random.uniform(0, 2*np.pi, size=3)
-    else:
-        b_empty.rotation_euler[2] += radians(stepsize)
+            bpy.ops.render.render(write_still=True)  # render still
+
+        frame_data = {
+            'file_path': scene.render.filepath,
+            'time': time / max(TIME_STEPS),
+            'rotation': radians(stepsize),
+            'transform_matrix': listify_matrix(cam.matrix_world)
+        }
+        out_data['frames'].append(frame_data)
+
+        if RANDOM_VIEWS:
+            if UPPER_VIEWS:
+                rot = np.random.uniform(0, 1, size=3) * (1,0,2*np.pi)
+                rot[0] = np.abs(np.arccos(1 - 2 * rot[0]) - np.pi/2)
+                b_empty.rotation_euler = rot
+            else:
+                b_empty.rotation_euler = np.random.uniform(0, 2*np.pi, size=3)
+        else:
+            b_empty.rotation_euler[2] += radians(stepsize)
 
 if not DEBUG:
     with open(fp + '/' + 'transforms.json', 'w') as out_file:
