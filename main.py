@@ -169,11 +169,12 @@ if __name__ == "__main__":
                 render_bkgd = data["color_bkgd"]
                 rays = data["rays"]
                 pixels = data["pixels"]
-                timestamps = data["timestamps"]
+                #timestamps = data["timestamps"]
+                timestamps = torch.zeros(size=(pixels.shape[0],1), device="cuda:0") + data["timestamps"]
                 num_nonzeros = torch.count_nonzero(timestamps)
                 print(num_nonzeros, len(timestamps) - num_nonzeros)
 
-                # timestamps = torch.zeros(size=(pixels.shape[0],1), device="cuda:0") + data["timestamps"]
+                
 
                 # update occupancy grid
                 occupancy_grid.every_n_step(
