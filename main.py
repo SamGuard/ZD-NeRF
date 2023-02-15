@@ -161,7 +161,7 @@ if __name__ == "__main__":
             for i in range(len(train_dataset)):
                 radiance_field.train()
 
-                if(train_in_order):
+                if(train_in_order and step < 5000 ):
                     scale = lambda x: x**2
                     r = scale(random.random())
                     index = 0
@@ -178,7 +178,7 @@ if __name__ == "__main__":
                 rays = data["rays"]
                 pixels = data["pixels"]
 
-                if(train_in_order):
+                if(train_in_order and step < 5000):
                     timestamps = torch.zeros(size=(pixels.shape[0],1), device="cuda:0") + data["timestamps"]
                 else:
                     timestamps = data["timestamps"]
@@ -239,7 +239,7 @@ if __name__ == "__main__":
                         f"n_rendering_samples={n_rendering_samples:d} | num_rays={len(pixels):d} |"
                     )
                     
-                if step % 50 == 0:
+                if step % 100 == 0:
                     torch.save(
                         radiance_field.state_dict(),
                         os.path.join(
