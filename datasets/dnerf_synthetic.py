@@ -42,7 +42,6 @@ def _load_renderings(root_fp: str, subject_id: str, split: str):
             if "time" in frame
             else float(i) / (len(meta["frames"]) - 1)
         )
-        print(frame["file_path"], timestamp)
         timestamps.append(timestamp)
         camtoworlds.append(frame["transform_matrix"])
         images.append(rgba)

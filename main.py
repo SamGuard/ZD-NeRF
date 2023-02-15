@@ -184,6 +184,8 @@ if __name__ == "__main__":
                     timestamps = torch.zeros(size=(pixels.shape[0],1), device="cuda:0") + data["timestamps"]
                 else:
                     timestamps = data["timestamps"]
+                print(timestamps)
+                print(data)
 
                 #timestamps = torch.zeros(size=(pixels.shape[0],1), device="cuda:0") + data["timestamps"]
 
