@@ -163,7 +163,7 @@ if __name__ == "__main__":
 
                 data = (
                     train_dataset[i // 2]
-                    if step <= 10
+                    if step <= 5000
                     else train_dataset[int(random.random() * len(train_dataset))]
                 )
                 render_bkgd = data["color_bkgd"]
@@ -215,6 +215,7 @@ if __name__ == "__main__":
                 grad_scaler.scale(loss).backward()
                 optimizer.step()
                 scheduler.step()
+                radiance_field.warp.odefunc.init()
 
                 if step % 1 == 0:
                     elapsed_time = time.time() - tic
