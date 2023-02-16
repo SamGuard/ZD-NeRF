@@ -221,6 +221,9 @@ class ODEFunc(nn.Module):
         super().__init__()
 
         self.model = ODENetwork(input_dim, output_dim, width, depth).to("cuda:0")
+        self.init()
+
+    def init(self):
         self.u_fn, self.params, _ = build_divfree_vector_field(self.model)
         self.predict = vmap(self.u_fn, in_dims=(None, None, 0))
 
@@ -249,7 +252,6 @@ class ODEBlock_torchdiffeq(nn.Module):
             time_steps = torch.cat((torch.tensor([0]).to("cuda:0"), time_steps), dim=0)
 
         # Morphed points
-        print(time_steps)
         morphed = torchdiffeq_odeint(self.odefunc, x, time_steps, rtol=1e-4, atol=1e-3, )
         if not needs_zero:
             morphed = morphed[1:]

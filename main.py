@@ -54,7 +54,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--aabb",
         type=lambda s: [float(item) for item in s.split(",")],
-        default="-1.5,-1.5,-1.5,1.5,1.5,1.5",
+        default="-3,-3,-3,3,3,3",
         help="delimited list input",
     )
     parser.add_argument(
@@ -295,6 +295,7 @@ if __name__ == "__main__":
         radiance_field.load_state_dict(
             torch.load(os.path.join("/", "mnt", "io", "train_out", args.model), device)
         )
+        radiance_field.warp.odefunc.init()
 
         radiance_field.to(device)
         radiance_field.eval()
