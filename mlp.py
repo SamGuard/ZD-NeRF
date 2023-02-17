@@ -4,7 +4,7 @@ Copyright (c) 2022 Ruilong Li, UC Berkeley.
 
 import functools
 import math
-from itertools import product
+import copy
 
 from typing import Callable, Optional
 import time
@@ -454,14 +454,13 @@ class ZD_NeRFRadianceField(nn.Module):
         return self.nerf.query_density(x)
 
     def freeze_nerf(self):
-        self.frozen_nerf = self.nerf.state_dict()
+        self.frozen_nerf = copy.deepcopy(self.nerf)
 
     def forward(self, x, t, condition=None):
         if(self.frozen_nerf != None):
-            self.nerf.load_state_dict(self.frozen_nerf)
-            print(self.frozen_nerf)
+            self.nerf = copy.deepcopy(self.frozen_nerf)
         for p in self.nerf.parameters():
-            #print(p)
+            print(p)
             break
         x = self.warp(t.flatten(), x)
         return self.nerf(x, condition=condition)
