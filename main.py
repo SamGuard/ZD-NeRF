@@ -161,11 +161,11 @@ if __name__ == "__main__":
     if not args.just_render:
         for epoch in range(10000000):
             for i in range(len(train_dataset)):
-                if(mode_switch_step <= step):
+                if(step <= mode_switch_step):
                     radiance_field.train()
                 else:
                     radiance_field.train()
-                    radiance_field.freeze_nerf()
+                    radiance_field.eval()
 
                 data = (
                     train_dataset[int(num_data * random.random() * 0.5)]
