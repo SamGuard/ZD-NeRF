@@ -455,11 +455,13 @@ class ZD_NeRFRadianceField(nn.Module):
 
     def freeze_nerf(self):
         self.frozen_nerf = self.nerf.state_dict()
+        print("FROZEN\n\n\n\n\n\n")
 
     def forward(self, x, t, condition=None):
         if(self.frozen_nerf != None):
             self.nerf.load_state_dict(self.frozen_nerf)
-            #print("LOADED\n\n\n\n\n\n")
+            print("LOADED\n\n\n\n\n\n")
+
         for p in self.nerf.parameters():
             print(p)
             break
