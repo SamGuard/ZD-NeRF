@@ -156,21 +156,26 @@ if __name__ == "__main__":
     # training
     step = 0
     tic = time.time()
+    mode_switch_step = 10000
     if not args.just_render:
         for epoch in range(10000000):
             for i in range(len(train_dataset)):
-                radiance_field.train()
+                if(mode_switch_step <= step):
+                    radiance_field.train()
+                else:
+                    radiance_field.train()
+                    radiance_field.nerf.eval()
 
                 data = (
                     train_dataset[i // 2]
-                    if step <= 1000
+                    if step <= mode_switch_step
                     else train_dataset[int(random.random() * len(train_dataset))]
                 )
                 render_bkgd = data["color_bkgd"]
                 rays = data["rays"]
                 pixels = data["pixels"]
                 #timestamps = data["timestamps"]
-                timestamps = torch.zeros(size=(pixels.shape[0],1), device="cuda:0") + data["timestamps"]                
+                timestamps = torch.zeros(size=(pixels.shape[0],1), device="cuda:0") + data["timestamps"]
 
                 # update occupancy grid
                 occupancy_grid.every_n_step(
