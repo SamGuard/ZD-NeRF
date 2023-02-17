@@ -165,7 +165,7 @@ if __name__ == "__main__":
                     radiance_field.train()
                 else:
                     radiance_field.train()
-                    radiance_field.nerf.eval()
+                    radiance_field.freeze_nerf()
 
                 data = (
                     train_dataset[int(num_data * random.random() * 0.5)]

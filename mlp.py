@@ -452,6 +452,11 @@ class ZD_NeRFRadianceField(nn.Module):
         x = self.warp(t.flatten(), x)
         return self.nerf.query_density(x)
 
+    def freeze_nerf(self):
+        for child in self.nerf.children():
+            for param in child.parameters():
+                param.requires_grad = False
+                
     def forward(self, x, t, condition=None):
         for p in self.nerf.parameters():
             print(p)
