@@ -156,7 +156,7 @@ if __name__ == "__main__":
     # training
     step = 0
     tic = time.time()
-    mode_switch_step = 10000
+    mode_switch_step = 100
     if not args.just_render:
         for epoch in range(10000000):
             for i in range(len(train_dataset)):
@@ -169,7 +169,7 @@ if __name__ == "__main__":
                 data = (
                     train_dataset[i // 2]
                     if step <= mode_switch_step
-                    else train_dataset[int(random.random() * len(train_dataset))]
+                    else train_dataset[len(train_dataset) + i // 2] #train_dataset[int(random.random() * len(train_dataset))]
                 )
                 render_bkgd = data["color_bkgd"]
                 rays = data["rays"]
