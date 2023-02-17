@@ -460,6 +460,7 @@ class ZD_NeRFRadianceField(nn.Module):
         if(self.frozen_nerf != None):
             self.nerf.load_state_dict(self.frozen_nerf)
         for p in self.nerf.parameters():
+            print("LOADED\n\n\n\n\n\n")
             print(p)
             break
         x = self.warp(t.flatten(), x)
