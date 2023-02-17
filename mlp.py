@@ -438,6 +438,7 @@ class ZD_NeRFRadianceField(nn.Module):
         #self.warp = ODEBlock_torchdyn(ODEfunc(input_dim=4, output_dim=3, width=32, depth=4))
         self.warp = ODEBlock_torchdiffeq(ODEFunc(input_dim=4, output_dim=3, width=32, depth=5))
         self.nerf = VanillaNeRFRadianceField()
+        self.frozen_nerf = None
 
     def query_opacity(self, x, timestamps, step_size):
         idxs = torch.randint(0, len(timestamps), (x.shape[0],), device=x.device)
@@ -453,11 +454,11 @@ class ZD_NeRFRadianceField(nn.Module):
         return self.nerf.query_density(x)
 
     def freeze_nerf(self):
-        for child in self.nerf.children():
-            for param in child.parameters():
-                param.requires_grad = False
-                
+        self.frozen_nerf = self.nerf.state_dict()
+
     def forward(self, x, t, condition=None):
+        if(self.frozen_nerf != None):
+            self.nerf.load_state_dict(self.frozen_nerf)
         for p in self.nerf.parameters():
             print(p)
             break
