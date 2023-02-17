@@ -163,7 +163,7 @@ if __name__ == "__main__":
 
                 data = (
                     train_dataset[i // 2]
-                    if step <= 5000
+                    if step <= 1000
                     else train_dataset[int(random.random() * len(train_dataset))]
                 )
                 render_bkgd = data["color_bkgd"]
