@@ -120,7 +120,7 @@ if __name__ == "__main__":
         gamma=0.33,
     )
     # setup the dataset
-    data_root_fp = "/home/ruilongli/data/dnerf/"
+    data_root_fp = "/mnt/io/data/dnerf/"
     target_sample_batch_size = 1 << 16
     grid_resolution = 64
 
@@ -162,9 +162,10 @@ if __name__ == "__main__":
         for epoch in range(10000000):
             for i in range(len(train_dataset)):
                 radiance_field.train()
+                """
                 if(step == mode_switch_step):
                     radiance_field.freeze_nerf()
-                    
+                """    
 
                 data = (
                     train_dataset[int(num_data * random.random() * 0.5)]
