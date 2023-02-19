@@ -112,9 +112,9 @@ def render_image(
         else:
             #print("Skip")
             s = len(chunk_rays.origins)
-            chunk_results = [torch.zeros(size=(s,3),device="cuda:0"), 
-            torch.zeros(size=(s,1),device="cuda:0"), 
-            torch.zeros(size=(s,1),device="cuda:0"), 0
+            chunk_results = [torch.zeros(size=(s,3) + 1,device="cuda:0"), 
+            torch.zeros(size=(s,1),device="cuda:0") + 1, 
+            torch.zeros(size=(s,1),device="cuda:0") + 1, 0
             ]
         results.append(chunk_results)
     colors, opacities, depths, n_rendering_samples = [
