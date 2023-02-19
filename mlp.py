@@ -210,7 +210,7 @@ class ODENetwork(nn.Module):
 
     def forward(self, t, x):
         if(self.batch):
-            x = torch.cat((x,torch.zeros((len(x), 1)) + t), dim=1).to("cuda:0")    
+            x = torch.cat((x,torch.zeros((len(x), 1)).to("cuda:0") + t), dim=1)
         else:
             x = torch.cat((x, t.reshape(1)), dim=0).to("cuda:0")
 
