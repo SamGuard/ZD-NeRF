@@ -198,7 +198,7 @@ def build_divfree_vector_field(module):
 
 
 class ODENetwork(nn.Module):
-    def __init__(self, input_dim, output_dim, width=32, depth=8):
+    def __init__(self, input_dim, output_dim, width=32, depth=8, batch=True):
         super().__init__()
         self.layers = nn.ModuleList()
 
@@ -206,11 +206,13 @@ class ODENetwork(nn.Module):
         for i in range(depth - 2):
             self.layers.append(nn.Linear(width, width))
         self.layers.append(nn.Linear(width, output_dim))
+        self.batch = batch
 
     def forward(self, t, x):
-        print(t.shape)
-        print(x.shape)
-        x = torch.cat((x, t.reshape(1)), dim=0).to("cuda:0")
+        if(self.batch):
+            x = torch.cat((x, t.reshape(1,1)), dim=1).to("cuda:0")    
+        else:
+            x = torch.cat((x, t.reshape(1)), dim=0).to("cuda:0")
 
         for l in self.layers[:-1]:
             x = torch.tanh(l(x))
@@ -222,7 +224,7 @@ class ODEFunc(nn.Module):
     def __init__(self, input_dim, output_dim, width=32, depth=8):
         super().__init__()
 
-        self.model = ODENetwork(input_dim, output_dim, width, depth).to("cuda:0")
+        self.model = ODENetwork(input_dim, output_dim, width, depth, batch=False).to("cuda:0")
         self.init()
 
     def init(self):
