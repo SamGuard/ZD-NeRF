@@ -221,7 +221,7 @@ if __name__ == "__main__":
                 grad_scaler.scale(loss).backward()
                 optimizer.step()
                 scheduler.step()
-                radiance_field.warp.odefunc.init()
+                #radiance_field.warp.odefunc.init()
 
                 if step % 1 == 0:
                     elapsed_time = time.time() - tic
