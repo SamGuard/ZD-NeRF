@@ -314,7 +314,7 @@ if __name__ == "__main__":
         radiance_field.load_state_dict(
             torch.load(os.path.join("/", "mnt", "io", "train_out", args.model), device)
         )
-        radiance_field.warp.odefunc.init()
+        #radiance_field.warp.odefunc.init()
 
         radiance_field.to(device)
         radiance_field.eval()
