@@ -235,6 +235,7 @@ class ODEBlock_torchdiffeq(nn.Module):
     def __init__(self, odefunc):
         super().__init__()
         self.odefunc = odefunc
+        
 
     def forward(self, t: torch.Tensor, x: torch.Tensor):
         if len(x) == 0:
@@ -436,7 +437,8 @@ class ZD_NeRFRadianceField(nn.Module):
         self.posi_encoder = SinusoidalEncoder(3, 0, 4, True)
         self.time_encoder = SinusoidalEncoder(1, 0, 4, True)
         #self.warp = ODEBlock_torchdyn(ODEfunc(input_dim=4, output_dim=3, width=32, depth=4))
-        self.warp = ODEBlock_torchdiffeq(ODEFunc(input_dim=4, output_dim=3, width=32, depth=5))
+        #self.warp = ODEBlock_torchdiffeq(ODEFunc(input_dim=4, output_dim=3, width=32, depth=5))
+        self.warp = ODEBlock_torchdiffeq(ODENetwork(input_dim=4, output_dim=3, width=32, depth=5))
         self.nerf = VanillaNeRFRadianceField()
         self.frozen_nerf = None
 

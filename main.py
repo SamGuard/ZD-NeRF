@@ -120,7 +120,7 @@ if __name__ == "__main__":
         gamma=0.33,
     )
     # setup the dataset
-    data_root_fp = "/mnt/io/data/dnerf/"
+    data_root_fp = "/home/ruilongli/data/dnerf/"
     target_sample_batch_size = 1 << 16
     grid_resolution = 64
 
