@@ -156,7 +156,7 @@ if __name__ == "__main__":
     # training
     step = 0
     tic = time.time()
-    mode_switch_step = 10000
+    mode_switch_step = 1000
     num_data = len(train_dataset)
     if not args.just_render:
         for epoch in range(10000000):
@@ -165,18 +165,30 @@ if __name__ == "__main__":
                 """
                 if(step == mode_switch_step):
                     radiance_field.freeze_nerf()
-                """    
+                """
 
+                """
+                # Use if freezing nerf
                 data = (
                     train_dataset[int(num_data * random.random() * 0.5)]
                     if step <= mode_switch_step
                     else train_dataset[int(num_data // 2 + num_data * random.random() * 0.5)] #train_dataset[int(random.random() * len(train_dataset))]
+                )"""
+
+                data = (
+                    train_dataset[int(num_data * random.random() * 0.5)]
+                    if step <= mode_switch_step
+                    else train_dataset[int(random.random() * len(train_dataset))]
                 )
+
                 render_bkgd = data["color_bkgd"]
                 rays = data["rays"]
                 pixels = data["pixels"]
-                #timestamps = data["timestamps"]
-                timestamps = torch.zeros(size=(pixels.shape[0],1), device="cuda:0") + data["timestamps"]
+                # timestamps = data["timestamps"]
+                timestamps = (
+                    torch.zeros(size=(pixels.shape[0], 1), device="cuda:0")
+                    + data["timestamps"]
+                )
 
                 # update occupancy grid
                 occupancy_grid.every_n_step(
@@ -221,7 +233,7 @@ if __name__ == "__main__":
                 grad_scaler.scale(loss).backward()
                 optimizer.step()
                 scheduler.step()
-                #radiance_field.warp.odefunc.init()
+                # radiance_field.warp.odefunc.init()
 
                 if step % 1 == 0:
                     elapsed_time = time.time() - tic
