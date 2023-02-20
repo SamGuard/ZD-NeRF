@@ -233,6 +233,7 @@ class ODEFuncWrapper(nn.Module):
         self.sol = SoleniodalVectorField(func, n_dims)
 
     def forward(self, t, x):
+        print(t)
         x = torch.cat((x, t.reshape(-1, 1)), dim=1)
         return self.sol(x, True)[:, : self.n_dims - 1]
 
