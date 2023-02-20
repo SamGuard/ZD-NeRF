@@ -188,7 +188,6 @@ class SoleniodalVectorField(nn.Module):
         )
         out = torch.zeros(size=(len(Jac_all),), device=Jac_all.device)
         for i, m in enumerate(Jac_all):
-            print(i)
             out[i] = torch.trace(m)
         return out
 
@@ -201,6 +200,7 @@ class SoleniodalVectorField(nn.Module):
 
         out = torch.zeros_like(x)
         for i, X in enumerate(x):
+            print(i)
             out[i] = self.forward_single(X)
 
         return out
