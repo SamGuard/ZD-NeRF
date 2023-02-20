@@ -12,10 +12,11 @@ import time
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from functorch import make_functional, vmap, jacrev
+from torch.autograd.functional import jacobian
 
 from torchdiffeq import odeint_adjoint as torchdiffeq_odeint
-#from torchdyn.core import NeuralODE as torchdyn_NeuralODE
+
+# from torchdyn.core import NeuralODE as torchdyn_NeuralODE
 
 
 class MLP(nn.Module):
@@ -164,82 +165,82 @@ class NerfMLP(nn.Module):
         return raw_rgb, raw_sigma
 
 
-def div(u):
-    """Accepts a function u:R^D -> R^D."""
-    J = jacrev(u)
-    return lambda x: torch.trace(J(x))
+class SoleniodalVectorField(nn.Module):
+    """
+    Given a nn.Module function which maps from R^n->R^n it will construct
+    a divergence free vector field.
+    """
 
+    def __init__(self, func, n_dims):
+        super().__init__()
+        self.func = func
+        self.n_dims = n_dims
 
-def build_divfree_vector_field(module):
-    """Returns an unbatched vector field, i.e. assumes input is a 1D tensor."""
-
-    F_fn, params = make_functional(module)
-
-    J_fn = jacrev(F_fn, argnums=2)
-
-    def A_fn(params, t, x):
-        J = J_fn(params, t, x)
-        A = J - J.T
+    def get_antisymmetric_mat(self, x):
+        J = jacobian(self.func, x, create_graph=True)
+        A = (J - torch.transpose(J, dim0=0, dim1=1)).flatten()
         return A
 
-    def A_flat_fn(params, t, x):
-        A = A_fn(params, t, x)
-        A_flat = A.reshape(-1)
-        return A_flat
+    def forward_single(self, x):
+        D = self.n_dims
+        Jac_all = jacobian(self.get_antisymmetric_mat, x, create_graph=True).reshape(
+            D, D, D
+        )
+        out = torch.zeros(size=(len(Jac_all),), device=Jac_all.device)
+        for i, m in enumerate(Jac_all):
+            out[i] = torch.trace(m)
+        return out
 
-    def ddF(params, t, x):
-        D = x.nelement()
-        dA_flat = jacrev(A_flat_fn, argnums=2)(params, t, x)
-        Jac_all = dA_flat.reshape(D, D, D)
-        ddF = vmap(torch.trace)(Jac_all)
-        return ddF
+    def forward_batch(self, x):
+        pass
 
-    return ddF, params, A_fn
+    def forward(self, x, batched=True):
+        if not batched:
+            return self.forward_single(x)
+
+        out = torch.zeros_like(x)
+        for i, X in enumerate(x):
+            out[i] = self.forward_single(X)
+
+        return out
 
 
 class ODENetwork(nn.Module):
-    def __init__(self, input_dim, output_dim, width=32, depth=8, batch=True):
+    def __init__(self, in_out_dim, width=32, depth=8):
         super().__init__()
         self.layers = nn.ModuleList()
 
-        self.layers.append(nn.Linear(input_dim, width))
+        self.layers.append(nn.Linear(in_out_dim, width))
         for i in range(depth - 2):
             self.layers.append(nn.Linear(width, width))
-        self.layers.append(nn.Linear(width, output_dim))
-        self.batch = batch
+        self.layers.append(nn.Linear(width, in_out_dim))
 
-    def forward(self, t, x):
-        if(self.batch):
-            x = torch.cat((x,torch.zeros((len(x), 1)).to("cuda:0") + t), dim=1)
-        else:
-            x = torch.cat((x, t.reshape(1)), dim=0).to("cuda:0")
-
+    def forward(self, x):
         for l in self.layers[:-1]:
             x = torch.tanh(l(x))
 
+        # Set 4th dimension to 0 as that is always time
+        # This dimension is needed for constructing the
+        # Soleniodel vector field
+        mask = torch.zeros_like(x) + 1.0
+        mask[-1] = 0.0
         return self.layers[-1](x)
 
 
-class ODEFunc(nn.Module):
-    def __init__(self, input_dim, output_dim, width=32, depth=8):
+class ODEFuncWrapper(nn.Module):
+    def __init__(self, func, n_dims=4):
         super().__init__()
-
-        self.model = ODENetwork(input_dim, output_dim, width, depth, batch=False).to("cuda:0")
-        self.init()
-
-    def init(self):
-        self.u_fn, self.params, _ = build_divfree_vector_field(self.model)
-        self.predict = vmap(self.u_fn, in_dims=(None, None, 0))
+        self.sol = SoleniodalVectorField(func, n_dims)
 
     def forward(self, t, x):
-        return self.predict(self.params, t, x)
+        x = torch.cat((x, t.reshape(-1, 1)), dim=1)
+        return self.sol(x, True)[:, : self.n_dims - 1]
 
 
 class ODEBlock_torchdiffeq(nn.Module):
     def __init__(self, odefunc):
         super().__init__()
         self.odefunc = odefunc
-        
 
     def forward(self, t: torch.Tensor, x: torch.Tensor):
         if len(x) == 0:
@@ -257,7 +258,13 @@ class ODEBlock_torchdiffeq(nn.Module):
             time_steps = torch.cat((torch.tensor([0]).to("cuda:0"), time_steps), dim=0)
 
         # Morphed points
-        morphed = torchdiffeq_odeint(self.odefunc, x, time_steps, rtol=1e-4, atol=1e-3, )
+        morphed = torchdiffeq_odeint(
+            self.odefunc,
+            x,
+            time_steps,
+            rtol=1e-4,
+            atol=1e-3,
+        )
         if not needs_zero:
             morphed = morphed[1:]
         # Morphed points contains an array which is of the form:
@@ -270,6 +277,7 @@ class ODEBlock_torchdiffeq(nn.Module):
         out = morphed[args, r]
 
         return out
+
 
 """
 Old code do not use
@@ -436,13 +444,15 @@ class DNeRFRadianceField(nn.Module):
 
 
 class ZD_NeRFRadianceField(nn.Module):
-    def __init__(self) -> None:
+    def __init__(
+        self,
+    ) -> None:
         super().__init__()
-        self.posi_encoder = SinusoidalEncoder(3, 0, 4, True)
-        self.time_encoder = SinusoidalEncoder(1, 0, 4, True)
-        #self.warp = ODEBlock_torchdyn(ODEfunc(input_dim=4, output_dim=3, width=32, depth=4))
-        #self.warp = ODEBlock_torchdiffeq(ODEFunc(input_dim=4, output_dim=3, width=32, depth=5))
-        self.warp = ODEBlock_torchdiffeq(ODENetwork(input_dim=4, output_dim=3, width=32, depth=5))
+        n_dims = 4
+        # self.warp = ODEBlock_torchdiffeq(ODEFunc(input_dim=4, output_dim=3, width=32, depth=5))
+        self.warp = ODEBlock_torchdiffeq(
+            ODEFuncWrapper(ODENetwork(n_dims, 32, 5), n_dims)
+        )
         self.nerf = VanillaNeRFRadianceField()
         self.frozen_nerf = None
 
@@ -463,7 +473,7 @@ class ZD_NeRFRadianceField(nn.Module):
         self.frozen_nerf = copy.deepcopy(self.nerf)
 
     def forward(self, x, t, condition=None):
-        if(self.frozen_nerf != None):
+        if self.frozen_nerf != None:
             self.nerf = copy.deepcopy(self.frozen_nerf)
 
         x = self.warp(t.flatten(), x)
