@@ -157,7 +157,7 @@ if __name__ == "__main__":
     radiance_field.warp.odefunc.sol.init()
     step = 0
     tic = time.time()
-    mode_switch_step = 1000
+    mode_switch_step = 30000
     num_data = len(train_dataset)
     if not args.just_render:
         for epoch in range(10000000):
