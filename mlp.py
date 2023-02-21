@@ -14,6 +14,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd.functional import jacobian
 
+from functorch import vmap, jacrev, make_functional
+
 from torchdiffeq import odeint_adjoint as torchdiffeq_odeint
 
 # from torchdyn.core import NeuralODE as torchdyn_NeuralODE
@@ -171,38 +173,37 @@ class SoleniodalVectorField(nn.Module):
     a divergence free vector field.
     """
 
-    def __init__(self, func, n_dims):
+    def __init__(self, model, n_dims):
         super().__init__()
-        self.func = func
+        self.model = model
+
+        _, self.params = make_functional(self.model)
+
+        for i, p in enumerate(self.params):
+            self.register_parameter(f"sol_param_{i}", p)
+
         self.n_dims = n_dims
 
+    def init(self):
+        self.func, _ = make_functional(self.model)
+        self.jac = jacrev(self.func, argnums=1)
+
     def get_antisymmetric_mat(self, x):
-        J = jacobian(self.func, x, create_graph=True)
+        J = self.jac(self.params, x)
         A = (J - torch.transpose(J, dim0=0, dim1=1)).flatten()
         return A
 
     def forward_single(self, x):
         D = self.n_dims
-        Jac_all = jacobian(self.get_antisymmetric_mat, x, create_graph=True).reshape(
-            D, D, D
-        )
-        out = torch.zeros(size=(len(Jac_all),), device=Jac_all.device)
-        for i, m in enumerate(Jac_all):
-            out[i] = torch.trace(m)
-        return out
 
-    def forward_batch(self, x):
-        pass
+        Jac_all = jacrev(self.get_antisymmetric_mat)(x).reshape(D, D, D)
+
+        return vmap(torch.trace)(Jac_all)
 
     def forward(self, x, batched=True):
         if not batched:
             return self.forward_single(x)
-
-        out = torch.zeros_like(x)
-        for i, X in enumerate(x):
-            print(i)
-            out[i] = self.forward_single(X)
-
+        out = vmap(self.forward_single)(x)
         return out
 
 
@@ -231,12 +232,18 @@ class ODENetwork(nn.Module):
 class ODEFuncWrapper(nn.Module):
     def __init__(self, func, n_dims=4):
         super().__init__()
+        self.n_dims = n_dims
         self.sol = SoleniodalVectorField(func, n_dims)
 
     def forward(self, t, x):
-        print(t)
         x = torch.cat((x, torch.zeros(size=(len(x), 1), device=x.device) + t), dim=1)
         return self.sol(x, True)[:, : self.n_dims - 1]
+
+    """def get_div(self, t, x):
+        x = torch.cat((x, torch.zeros(size=(len(x), 1), device=x.device) + t), dim=1)
+        div_u = div(lambda x: self.sol(x, False))
+        d = vmap(div_u)(x)
+        return torch.sum(d, dim=0)"""
 
 
 class ODEBlock_torchdiffeq(nn.Module):
