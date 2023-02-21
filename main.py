@@ -311,13 +311,12 @@ if __name__ == "__main__":
 
                 step += 1
     else:
-        radiance_field = ZD_NeRFRadianceField()
+        radiance_field = ZD_NeRFRadianceField().to(device)
         radiance_field.load_state_dict(
             torch.load(os.path.join("/", "mnt", "io", "train_out", args.model), device)
         )
         radiance_field.warp.odefunc.sol.init()
 
-        radiance_field.to(device)
         radiance_field.eval()
         step = 0
         num_time = 10
