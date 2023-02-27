@@ -288,55 +288,6 @@ class ODEBlock_torchdiffeq(nn.Module):
         return out
 
 
-"""
-Old code do not use
-class ODEBlock_torchdyn(nn.Module):
-    def __init__(self, odefunc):
-        super().__init__()
-        self.odefunc = odefunc
-        self.ode = torchdyn_NeuralODE(self.odefunc, solver="dopri5", sensitivity="adjoint").to("cuda:0")
-
-    def forward(self, t: torch.Tensor, x: torch.Tensor):
-        if len(x) == 0:
-            return torch.zeros_like(x)
-
-        # Need to sort in order of time
-        time_steps, args = torch.unique(t, sorted=True, return_inverse=True)
-
-        if len(time_steps) == 1 and time_steps[0] == 0.0:
-            return x
-
-        needs_zero = True
-        if not torch.any(time_steps == 0.0):
-            needs_zero = False
-            time_steps = torch.cat((torch.tensor([0]).to("cuda:0"), time_steps), dim=0)
-
-        print(time_steps)
-        print(x)
-        print(time_steps.shape)
-        print(x.shape)
-
-        _, morphed = self.ode(x, time_steps)
-        #print("pre cut", morphed.shape)
-
-        if not needs_zero and len(morphed) > 1:
-            morphed = morphed[1:]
-    
-        # Morphed points contains an array which is of the form:
-        # morphed[time_stamp][index]
-        # As this list is in order of time we need to convert it back to how the time steps were before sorting
-        # To this we index by the args array, which will give all points at a given time
-        # Then indexing by r gives the morphed point at the time given
-        
-        r = torch.linspace(0, x.shape[0] - 1, x.shape[0], dtype=torch.long)
-        
-        out = morphed[args, r]
-        
-        #print("----")
-
-        return out"""
-
-
 class SinusoidalEncoder(nn.Module):
     """Sinusoidal Positional Encoder used in Nerf."""
 
