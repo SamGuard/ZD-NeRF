@@ -12,13 +12,11 @@ import time
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.autograd.functional import jacobian
 
+from torch.autograd.functional import jacobian
 from functorch import vmap, jacrev, make_functional
 
 from torchdiffeq import odeint_adjoint as torchdiffeq_odeint
-
-# from torchdyn.core import NeuralODE as torchdyn_NeuralODE
 
 
 class MLP(nn.Module):
@@ -165,85 +163,78 @@ class NerfMLP(nn.Module):
             x = torch.cat([bottleneck, condition], dim=-1)
         raw_rgb = self.rgb_layer(x)
         return raw_rgb, raw_sigma
+    
 
-
-class SoleniodalVectorField(nn.Module):
-    """
-    Given a nn.Module function which maps from R^n->R^n it will construct
-    a divergence free vector field.
-    """
-
-    def __init__(self, model, n_dims):
-        super().__init__()
-        self.model = model
-
-        _, self.params = make_functional(self.model)
-
-        for i, p in enumerate(self.params):
-            self.register_parameter(f"sol_param_{i}", p)
-
-        self.n_dims = n_dims
-
-    def init(self):
-        self.func, _ = make_functional(self.model)
-        self.jac = jacrev(self.func, argnums=1)
-
-    def get_antisymmetric_mat(self, x):
-        J = self.jac(self.params, x)
-        A = (J - torch.transpose(J, dim0=0, dim1=1)).flatten()
-        return A
-
-    def forward_single(self, x):
-        D = self.n_dims
-
-        Jac_all = jacrev(self.get_antisymmetric_mat)(x).reshape(D, D, D)
-
-        return vmap(torch.trace)(Jac_all)
-
-    def forward(self, x, batched=True):
-        if not batched:
-            return self.forward_single(x)
-        out = vmap(self.forward_single)(x)
-        return out
-
-
-class ODENetwork(nn.Module):
-    def __init__(self, in_out_dim, width=32, depth=8):
+class NeuralField(nn.Module):
+    def __init__(self, in_dim, out_dim, width=32, depth=8):
         super().__init__()
         self.layers = nn.ModuleList()
 
-        self.layers.append(nn.Linear(in_out_dim, width))
+        self.layers.append(nn.Linear(in_dim, width))
         for i in range(depth - 2):
             self.layers.append(nn.Linear(width, width))
-        self.layers.append(nn.Linear(width, in_out_dim))
+        self.layers.append(nn.Linear(width, out_dim))
 
     def forward(self, x):
         for l in self.layers[:-1]:
             x = torch.tanh(l(x))
-
-        # Set 4th dimension to 0 as that is always time
-        # This dimension is needed for constructing the
-        # Soleniodel vector field
-        mask = torch.zeros_like(x) + 1.0
-        mask[-1] = 0.0
         return self.layers[-1](x)
 
 
-class ODEFuncWrapper(nn.Module):
-    def __init__(self, func, n_dims=4):
+class SolenoidalField(nn.Module):
+    def __init__(self, neural_field):
         super().__init__()
-        self.n_dims = n_dims
-        self.sol = SoleniodalVectorField(func, n_dims)
+        self.func: nn.Module = neural_field 
+
+    def predict(self, t, x):
+        """
+        Test func, if working correctly the f2 should be removed and only leave f1
+        f1 = torch.stack((-x[1], x[0], 0*x[2]), dim=0) # Curl
+        f2 = torch.stack((x[0]**2, x[1]**2, 0*x[2]), dim=0) # Divergence
+        return f1 + f2"""
+        x = torch.cat((x, t.reshape(1)), dim=0)
+        return self.func(x)
+        
+
+    def curl_func_3d(self, t, x):
+        jac = torch.squeeze(vmap(jacrev(self.predict, argnums=(1)), (None, 0))(t, x))
+        if(len(jac.shape) == 2):
+            jac = jac.reshape(1, jac.shape[0], jac.shape[1])
+        A = jac - torch.transpose(jac, dim0=1, dim1=2)
+        x_vec = x.reshape(x.shape[0], x.shape[1], 1)
+        return torch.bmm(A, x_vec).reshape(x.shape)
 
     def forward(self, t, x):
-        x = torch.cat((x, torch.zeros(size=(len(x), 1), device=x.device) + t), dim=1)
-        return self.sol(x, True)[:, : self.n_dims - 1]
+        return self.curl_func_3d(t, x)
+    
+    def get_base_func(self, t, x):
+        """
+        Get the output of the function without removing div
+        For testing/visualisation
+        """
+        return vmap(self.predict, in_dims=(None, 0))(t, x)[:, :3]
+    
+    def get_div(self, t, x):
+        """
+        Get diveregence of the vec field (should be zero (hopefully))
+        """
+        div = 0
+        for i in range(len(x)):
+            _, J = jacobian(self.curl_func_3d, (t, x[i:i+1]), )
+            J=J.squeeze()
+            div += torch.trace(J)
+        return div
 
-    """def get_div(self, t, x):
-        x = torch.cat((x, torch.zeros(size=(len(x), 1), device=x.device) + t), dim=1)
-        div_u = div(lambda x: self.sol(x, False))
-        d = vmap(div_u)(x)
-        return torch.sum(d, dim=0)"""
+    def get_div_base(self, t, x):
+        """
+        Get the diveregence of the function before div is removed
+        """
+        div = 0
+        for i in range(len(x)):
+            _, J = jacobian(self.predict, (t, x[i]), )
+            J=J.squeeze()
+            div += torch.trace(J)
+        return div
 
 
 class ODEBlock_torchdiffeq(nn.Module):
@@ -408,11 +399,9 @@ class ZD_NeRFRadianceField(nn.Module):
         self,
     ) -> None:
         super().__init__()
-        n_dims = 4
         # self.warp = ODEBlock_torchdiffeq(ODEFunc(input_dim=4, output_dim=3, width=32, depth=5))
         self.warp = ODEBlock_torchdiffeq(
-            ODEFuncWrapper(ODENetwork(n_dims, 32, 5), n_dims)
-        )
+            SolenoidalField(NeuralField(4, 3, 32, 5)))
         self.nerf = VanillaNeRFRadianceField()
         self.frozen_nerf = None
 
