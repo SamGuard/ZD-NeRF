@@ -201,8 +201,12 @@ class SolenoidalField(nn.Module):
         if(len(jac.shape) == 2):
             jac = jac.reshape(1, jac.shape[0], jac.shape[1])
         A = jac - torch.transpose(jac, dim0=1, dim1=2)
-        x_vec = x.reshape(x.shape[0], x.shape[1], 1)
-        return torch.bmm(A, x_vec).reshape(x.shape)
+        u = torch.tensor([[0,0],
+                         [1,0],
+                         [0,1]], device=x.device)
+        x_vec = torch.zeros((x.shape[0], x.shape[1], 2), device=x.device) + u
+        U = torch.bmm(A, x_vec)
+        return U.sum(dim=2)
 
     def forward(self, t, x):
         return self.curl_func_3d(t, x)
