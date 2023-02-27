@@ -154,7 +154,6 @@ if __name__ == "__main__":
     ).to(device)
 
     # training
-    radiance_field.warp.odefunc.sol.init()
     step = 0
     tic = time.time()
     mode_switch_step = 5000
@@ -234,7 +233,6 @@ if __name__ == "__main__":
                 grad_scaler.scale(loss).backward()
                 optimizer.step()
                 scheduler.step()
-                # radiance_field.warp.odefunc.init()
 
                 if step % 1 == 0:
                     elapsed_time = time.time() - tic
@@ -315,7 +313,6 @@ if __name__ == "__main__":
         radiance_field.load_state_dict(
             torch.load(os.path.join("/", "mnt", "io", "train_out", args.model), device)
         )
-        radiance_field.warp.odefunc.sol.init()
 
         radiance_field.eval()
         step = 0
