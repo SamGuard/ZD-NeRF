@@ -184,60 +184,62 @@ class NeuralField(nn.Module):
 class SolenoidalField(nn.Module):
     def __init__(self, neural_field):
         super().__init__()
-        self.func: nn.Module = neural_field 
+        self.func: nn.Module = neural_field
 
     def predict(self, t, x):
-        """
-        Test func, if working correctly the f2 should be removed and only leave f1
-        f1 = torch.stack((-x[1], x[0], 0*x[2]), dim=0) # Curl
-        f2 = torch.stack((x[0]**2, x[1]**2, 0*x[2]), dim=0) # Divergence
-        return f1 + f2"""
-        x = torch.cat((x, t.reshape(1)), dim=0)
-        return self.func(x)
-    
+        return self.predict_batch(t, x.reshape(1, -1)).squeeze()
+        #return self.test_func(x)
+
     def predict_batch(self, t, x):
         x = torch.cat((x, torch.zeros(size=(len(x), 1), device=x.device) + t), dim=1)
-        return self.func(x)
+        x = self.func(x)
+        x[:, 2] = 0
+        return x
+        #return self.test_func(x)
 
     def curl_func_3d(self, t, x):
         jac = torch.squeeze(vmap(jacrev(self.predict, argnums=(1)), (None, 0))(t, x))
-        if(len(jac.shape) == 2):
+        if len(jac.shape) == 2:
             jac = jac.reshape(1, jac.shape[0], jac.shape[1])
-        A = jac - torch.transpose(jac, dim0=1, dim1=2)
-        x_vec = self.predict_batch(t, x).reshape(x.shape[0], x.shape[1], 1)
-        return torch.bmm(A, x_vec).reshape(x.shape)
+        curl = torch.stack((jac[:, 2, 1] - jac[:, 1, 2],
+                            jac[:, 0, 2] - jac[:, 2, 0],
+                            jac[:, 1, 0] - jac[:, 0, 1]), dim=1)
+        return curl
 
     def forward(self, t, x):
         return self.curl_func_3d(t, x)
-    
+
     def get_base_func(self, t, x):
         """
         Get the output of the function without removing div
         For testing/visualisation
         """
-        return vmap(self.predict, in_dims=(None, 0))(t, x)[:, :3]
-    
-    def get_div(self, t, x):
+        return vmap(self.predict, in_dims=(None, 0))(t, x)
+
+    def get_div(self, t: torch.Tensor, x: torch.Tensor):
         """
         Get diveregence of the vec field (should be zero (hopefully))
         """
-        div = 0
-        for i in range(len(x)):
-            _, J = jacobian(self.curl_func_3d, (t, x[i:i+1]), )
-            J=J.squeeze()
-            div += torch.trace(J)
-        return div
+        x = x.reshape(x.shape[0], 1, x.shape[1])
+        div_func = jacrev(self.curl_func_3d, argnums=1)
+        return torch.sum(
+            vmap(lambda t, x: torch.trace(div_func(t, x).squeeze()), in_dims=(None, 0))(
+                t, x
+            ),
+            dim=0,
+        )
 
     def get_div_base(self, t, x):
         """
         Get the diveregence of the function before div is removed
         """
-        div = 0
-        for i in range(len(x)):
-            _, J = jacobian(self.predict, (t, x[i]), )
-            J=J.squeeze()
-            div += torch.trace(J)
-        return div
+        div_func = jacrev(self.predict, argnums=1)
+        return torch.sum(
+            vmap(lambda t, x: torch.trace(div_func(t, x).squeeze()), in_dims=(None, 0))(
+                t, x
+            ),
+            dim=0,
+        )
 
 
 class ODEBlock_torchdiffeq(nn.Module):
