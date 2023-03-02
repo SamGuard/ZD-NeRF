@@ -193,7 +193,6 @@ class SolenoidalField(nn.Module):
     def predict_batch(self, t, x):
         x = torch.cat((x, torch.zeros(size=(len(x), 1), device=x.device) + t), dim=1)
         x = self.func(x)
-        x[:, 2] = 0
         return x
         #return self.test_func(x)
 
