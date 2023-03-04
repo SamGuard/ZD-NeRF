@@ -194,19 +194,22 @@ class SolenoidalField(nn.Module):
         #return self.test_func(x)
         x = torch.cat((x, torch.zeros(size=(len(x), 1), device=x.device) + t), dim=1)
         x = self.func(x)
-        x[:, 2] = 0
         return x
         
 
-    def curl_func_3d(self, t, x):
+    def curl_func_3d(self, t: torch.Tensor, x: torch.Tensor):
         jac = torch.squeeze(vmap(jacrev(self.predict, argnums=(1)), (None, 0))(t, x))
         if len(jac.shape) == 2:
             jac = jac.reshape(1, jac.shape[0], jac.shape[1])
         A = jac.clone()
         for i in range(3):
             A[:, i, i] = 0.0
-        x_vec = x.reshape(x.shape[0], x.shape[1], 1)
+        x_vec = x.unsqueeze(2)
         return torch.bmm(A, x_vec).reshape(x.shape)
+
+    def print_jac_of_field(self, t: torch.Tensor, x: torch.Tensor):
+        jac = vmap(jacrev(self.curl_func_3d, argnums=(1)), (None, 0))(t, x.unsqueeze(1)).squeeze()
+        print(jac)    
 
     def forward(self, t, x):
         return self.curl_func_3d(t, x)
