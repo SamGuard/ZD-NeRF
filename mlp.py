@@ -187,23 +187,26 @@ class SolenoidalField(nn.Module):
         self.func: nn.Module = neural_field
 
     def predict(self, t, x):
-        return self.predict_batch(t, x.reshape(1, -1)).squeeze()
         #return self.test_func(x)
+        return self.predict_batch(t, x.reshape(1, -1)).squeeze()
 
     def predict_batch(self, t, x):
+        #return self.test_func(x)
         x = torch.cat((x, torch.zeros(size=(len(x), 1), device=x.device) + t), dim=1)
         x = self.func(x)
+        x[:, 2] = 0
         return x
-        #return self.test_func(x)
+        
 
     def curl_func_3d(self, t, x):
         jac = torch.squeeze(vmap(jacrev(self.predict, argnums=(1)), (None, 0))(t, x))
         if len(jac.shape) == 2:
             jac = jac.reshape(1, jac.shape[0], jac.shape[1])
-        curl = torch.stack((jac[:, 2, 1] - jac[:, 1, 2],
-                            jac[:, 0, 2] - jac[:, 2, 0],
-                            jac[:, 1, 0] - jac[:, 0, 1]), dim=1)
-        return curl
+        A = jac.clone()
+        for i in range(3):
+            A[:, i, i] = 0.0
+        x_vec = x.reshape(x.shape[0], x.shape[1], 1)
+        return torch.bmm(A, x_vec).reshape(x.shape)
 
     def forward(self, t, x):
         return self.curl_func_3d(t, x)
