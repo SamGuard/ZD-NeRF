@@ -165,22 +165,6 @@ class NerfMLP(nn.Module):
         return raw_rgb, raw_sigma
     
 
-class NeuralField(nn.Module):
-    def __init__(self, in_dim, out_dim, width=32, depth=8):
-        super().__init__()
-        self.layers = nn.ModuleList()
-
-        self.layers.append(nn.Linear(in_dim, width))
-        for i in range(depth - 2):
-            self.layers.append(nn.Linear(width, width))
-        self.layers.append(nn.Linear(width, out_dim))
-
-    def forward(self, x):
-        for l in self.layers[:-1]:
-            x = torch.tanh(l(x))
-        return self.layers[-1](x)
-
-
 class SolenoidalField(nn.Module):
     def __init__(self, neural_field):
         super().__init__()
@@ -245,6 +229,40 @@ class SolenoidalField(nn.Module):
             ),
             dim=0,
         )
+
+
+class NeuralField(nn.Module):
+    def __init__(self, spatial_dims=3, other_inputs=1, width=32, depth=8):
+        super().__init__()
+
+        self.spatial_dims = spatial_dims
+        self.other_inputs = other_inputs
+
+        # One full network for each output dim
+        networks = nn.ModuleList()
+        for i in range(spatial_dims):
+            layers = [nn.Linear(spatial_dims + other_inputs - 1, width)]
+            for i in range(depth - 2):
+                layers.append(nn.Linear(width, width))
+                layers.append(nn.Tanh())
+            layers.append(nn.Linear(width, 1))
+            networks.append(nn.Sequential(*layers))
+
+        self.networks = networks
+
+    def forward(self, t: torch.Tensor, x: torch.Tensor):
+        t = torch.zeros((x.shape[0], 1), device=t.device) + t
+        output = torch.zeros(x.shape[0], self.spatial_dims)
+        for i in range(self.spatial_dims):
+            # Remove ith dimension
+            """if(i == 0):
+                _x = torch.cat((x[:, i + 1 :], t), dim=1)
+            elif(i == self.spatial_dims - 1):
+                _x = torch.cat((x[:, 0:i], t), dim=1)
+            else:"""
+            _x = torch.cat((x[:, 0:i], x[:, i + 1 :], t), dim=1)
+            output[:, i] = self.networks[i](_x).squeeze()
+        return output
 
 
 class ODEBlock_torchdiffeq(nn.Module):
@@ -410,8 +428,9 @@ class ZD_NeRFRadianceField(nn.Module):
     ) -> None:
         super().__init__()
         # self.warp = ODEBlock_torchdiffeq(ODEFunc(input_dim=4, output_dim=3, width=32, depth=5))
-        self.warp = ODEBlock_torchdiffeq(
-            SolenoidalField(NeuralField(4, 3, 64, 6)))
+        #self.warp = ODEBlock_torchdiffeq(
+        #    SolenoidalField(NeuralField(4, 3, 64, 6)))
+        self.warp = ODEBlock_torchdiffeq(NeuralField(3, 1, 32, 6))
         self.nerf = VanillaNeRFRadianceField()
         self.frozen_nerf = None
 
