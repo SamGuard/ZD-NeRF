@@ -22,7 +22,7 @@ from nerfacc import ContractionType, OccupancyGrid
 if __name__ == "__main__":
 
     device = "cuda:0"
-    set_random_seed(27)
+    set_random_seed(42)
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -155,6 +155,7 @@ if __name__ == "__main__":
 
     # training
     step = 0
+    attempts = 0
     tic = time.time()
     mode_switch_step = 5000
     num_data = len(train_dataset)
@@ -226,8 +227,14 @@ if __name__ == "__main__":
                 alive_ray_mask = acc.squeeze(-1) > 0
 
                 if(alive_ray_mask.long().sum() == 0):
-                    print("No rays hit target, exiting")
-                    exit(-1)
+                    if(attempts < 5):
+                        radiance_field = ZD_NeRFRadianceField().to(device)
+                        attempts += 1
+                        step = 0
+                        print("Model to failed to not keep enough rays alive, reseting. Attempt number:", attempts)
+                    else:        
+                        print("No rays hit target, exiting")
+                        exit(-1)
 
                 # compute loss
                 loss = F.smooth_l1_loss(rgb[alive_ray_mask], pixels[alive_ray_mask])
