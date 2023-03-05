@@ -22,7 +22,7 @@ from nerfacc import ContractionType, OccupancyGrid
 if __name__ == "__main__":
 
     device = "cuda:0"
-    set_random_seed(42)
+    set_random_seed(41)
 
     parser = argparse.ArgumentParser()
     parser.add_argument(

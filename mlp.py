@@ -252,7 +252,6 @@ class DivergenceFreeNeuralField(nn.Module):
         self.no_trace_param = torch.nn.Parameter(torch.randn((1,)))
 
     def forward(self, t: torch.Tensor, x: torch.Tensor):
-        print("Hi")
         t = torch.zeros((x.shape[0], 1), device=t.device) + t
         output = torch.zeros(x.shape[0], self.spatial_dims)
         for i in range(self.spatial_dims):
