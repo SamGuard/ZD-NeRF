@@ -224,6 +224,9 @@ if __name__ == "__main__":
                 )
                 train_dataset.update_num_rays(num_rays)
                 alive_ray_mask = acc.squeeze(-1) > 0
+                
+                if(alive_ray_mask.long().sum() == 0):
+                    continue
 
                 # compute loss
                 loss = F.smooth_l1_loss(rgb[alive_ray_mask], pixels[alive_ray_mask])
