@@ -452,8 +452,8 @@ class ZD_NeRFRadianceField(nn.Module):
         # self.warp = ODEBlock_torchdiffeq(ODEFunc(input_dim=4, output_dim=3, width=32, depth=5))
         #self.warp = ODEBlock_torchdiffeq(
         #    SolenoidalField(NeuralField(4, 3, 64, 6)))
-        #self.warp = ODEBlock_torchdiffeq(DivergenceFreeNeuralField(3, 1, 16, 6))
-        self.warp = ODEBlock_torchdiffeq(NeuralField(4, 3, 32, 6))
+        self.warp = ODEBlock_torchdiffeq(DivergenceFreeNeuralField(3, 1, 16, 6))
+        #self.warp = ODEBlock_torchdiffeq(NeuralField(4, 3, 32, 6))
         self.nerf = VanillaNeRFRadianceField()
         self.frozen_nerf = None
 
