@@ -289,6 +289,7 @@ class ODEBlock_torchdiffeq(nn.Module):
 
         if len(time_steps) == 1 and time_steps[0] == 0.0:
             return x
+        print("hi")
 
         needs_zero = True
         if not torch.any(time_steps == 0.0):
