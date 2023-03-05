@@ -28,7 +28,7 @@ def new_model():
 if __name__ == "__main__":
 
     device = "cuda:0"
-    set_random_seed(42)
+    set_random_seed(27)
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -237,6 +237,7 @@ if __name__ == "__main__":
                         attempts += 1
                         step = 0
                         print("Model to failed to not keep enough rays alive, reseting. Attempt number:", attempts)
+                        continue
                     else:        
                         print("No rays hit target, exiting")
                         exit(-1)
