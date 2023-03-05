@@ -231,7 +231,7 @@ class SolenoidalField(nn.Module):
         )
 
 
-class NeuralField(nn.Module):
+class DivergenceFreeNeuralField(nn.Module):
     def __init__(self, spatial_dims=3, other_inputs=1, width=32, depth=8):
         super().__init__()
 
@@ -254,15 +254,25 @@ class NeuralField(nn.Module):
         t = torch.zeros((x.shape[0], 1), device=t.device) + t
         output = torch.zeros(x.shape[0], self.spatial_dims, device=x.device)
         for i in range(self.spatial_dims):
-            # Remove ith dimension
-            """if(i == 0):
-                _x = torch.cat((x[:, i + 1 :], t), dim=1)
-            elif(i == self.spatial_dims - 1):
-                _x = torch.cat((x[:, 0:i], t), dim=1)
-            else:"""
             _x = torch.cat((x[:, 0:i], x[:, i + 1 :], t), dim=1)
             output[:, i] = self.networks[i](_x).squeeze()
         return output
+    
+class NeuralField(nn.Module):
+    def __init__(self, in_dim, out_dim, width=32, depth=8):
+        super().__init__()
+        self.layers = nn.ModuleList()
+
+        self.layers.append(nn.Linear(in_dim, width))
+        for i in range(depth - 2):
+            self.layers.append(nn.Linear(width, width))
+        self.layers.append(nn.Linear(width, out_dim))
+
+    def forward(self, t, x):
+        x = torch.cat((x, torch.zeros((x.shape[0], 1), device=t.device) + t), dim=1)
+        for l in self.layers[:-1]:
+            x = torch.tanh(l(x))
+        return self.layers[-1](x)
 
 
 class ODEBlock_torchdiffeq(nn.Module):
@@ -430,7 +440,8 @@ class ZD_NeRFRadianceField(nn.Module):
         # self.warp = ODEBlock_torchdiffeq(ODEFunc(input_dim=4, output_dim=3, width=32, depth=5))
         #self.warp = ODEBlock_torchdiffeq(
         #    SolenoidalField(NeuralField(4, 3, 64, 6)))
-        self.warp = ODEBlock_torchdiffeq(NeuralField(3, 1, 16, 6))
+        #self.warp = ODEBlock_torchdiffeq(DivergenceFreeNeuralField(3, 1, 16, 6))
+        self.warp = ODEBlock_torchdiffeq(NeuralField(4, 3, 32, 6))
         self.nerf = VanillaNeRFRadianceField()
         self.frozen_nerf = None
 
