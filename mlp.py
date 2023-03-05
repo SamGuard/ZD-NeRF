@@ -250,6 +250,7 @@ class DivergenceFreeNeuralField(nn.Module):
         self.networks = networks
 
         self.no_trace_param = torch.nn.Parameter(torch.randn((1,)))
+        self.trace_scale = torch.nn.Parameter(torch.randn((1,)))
 
     def forward(self, t: torch.Tensor, x: torch.Tensor):
         t = torch.zeros((x.shape[0], 1), device=t.device) + t
@@ -265,9 +266,9 @@ class DivergenceFreeNeuralField(nn.Module):
             output[:, i] = self.networks[i](_x).squeeze()
         a = torch.cos(self.no_trace_param)
         b = torch.sin(self.no_trace_param)
-        output[:, 0] += a * x[:, 0]
-        output[:, 1] += b * x[:, 1]
-        output[:, 2] += (1.0 - (a + b)) * x[:, 2]
+        output[:, 0] += self.trace_scale * a * x[:, 0]
+        output[:, 1] += self.trace_scale * b * x[:, 1]
+        output[:, 2] += self.trace_scale * (1.0 - (a + b)) * x[:, 2]
         return output
     
 class NeuralField(nn.Module):
