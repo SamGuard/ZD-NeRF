@@ -234,7 +234,6 @@ class SolenoidalField(nn.Module):
 class DivergenceFreeNeuralField(nn.Module):
     def __init__(self, spatial_dims=3, other_inputs=1, width=32, depth=8):
         super().__init__()
-
         self.spatial_dims = spatial_dims
         self.other_inputs = other_inputs
 
@@ -250,12 +249,25 @@ class DivergenceFreeNeuralField(nn.Module):
 
         self.networks = networks
 
+        self.no_trace_param = torch.nn.Parameter(torch.randn((1,)))
+
     def forward(self, t: torch.Tensor, x: torch.Tensor):
         t = torch.zeros((x.shape[0], 1), device=t.device) + t
-        output = torch.zeros(x.shape[0], self.spatial_dims, device=x.device)
+        output = torch.zeros(x.shape[0], self.spatial_dims)
         for i in range(self.spatial_dims):
+            # Remove ith dimension
+            """if(i == 0):
+                _x = torch.cat((x[:, i + 1 :], t), dim=1)
+            elif(i == self.spatial_dims - 1):
+                _x = torch.cat((x[:, 0:i], t), dim=1)
+            else:"""
             _x = torch.cat((x[:, 0:i], x[:, i + 1 :], t), dim=1)
             output[:, i] = self.networks[i](_x).squeeze()
+        a = torch.cos(self.no_trace_param)
+        b = torch.sin(self.no_trace_param)
+        output[:, 0] += a * x[:, 0]
+        output[:, 1] += b * x[:, 1]
+        output[:, 2] += (1.0 - (a + b)) * x[:, 2]
         return output
     
 class NeuralField(nn.Module):
@@ -289,7 +301,6 @@ class ODEBlock_torchdiffeq(nn.Module):
 
         if len(time_steps) == 1 and time_steps[0] == 0.0:
             return x
-        print("hi")
 
         needs_zero = True
         if not torch.any(time_steps == 0.0):
@@ -441,8 +452,8 @@ class ZD_NeRFRadianceField(nn.Module):
         # self.warp = ODEBlock_torchdiffeq(ODEFunc(input_dim=4, output_dim=3, width=32, depth=5))
         #self.warp = ODEBlock_torchdiffeq(
         #    SolenoidalField(NeuralField(4, 3, 64, 6)))
-        #self.warp = ODEBlock_torchdiffeq(DivergenceFreeNeuralField(3, 1, 16, 6))
-        self.warp = ODEBlock_torchdiffeq(NeuralField(4, 3, 32, 6))
+        self.warp = ODEBlock_torchdiffeq(DivergenceFreeNeuralField(3, 1, 16, 6))
+        #self.warp = ODEBlock_torchdiffeq(NeuralField(4, 3, 32, 6))
         self.nerf = VanillaNeRFRadianceField()
         self.frozen_nerf = None
 
