@@ -226,7 +226,8 @@ if __name__ == "__main__":
                 alive_ray_mask = acc.squeeze(-1) > 0
 
                 if(alive_ray_mask.long().sum() == 0):
-                    continue
+                    print("No rays hit target, exiting")
+                    exit(-1)
 
                 # compute loss
                 loss = F.smooth_l1_loss(rgb[alive_ray_mask], pixels[alive_ray_mask])

@@ -252,7 +252,6 @@ class DivergenceFreeNeuralField(nn.Module):
         self.no_trace_param = torch.nn.Parameter(torch.randn((1,)))
 
     def forward(self, t: torch.Tensor, x: torch.Tensor):
-        print("hi")
         t = torch.zeros((x.shape[0], 1), device=t.device) + t
         output = torch.zeros(x.shape[0], self.spatial_dims)
         for i in range(self.spatial_dims):
@@ -479,4 +478,6 @@ class ZD_NeRFRadianceField(nn.Module):
             self.nerf = copy.deepcopy(self.frozen_nerf)
 
         x = self.warp(t.flatten(), x)
-        return self.nerf(x, condition=condition)
+        out = self.nerf(x, condition=condition)
+        print(out)
+        return out
