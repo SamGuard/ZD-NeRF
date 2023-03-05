@@ -19,6 +19,12 @@ from utils import render_image, set_random_seed
 
 from nerfacc import ContractionType, OccupancyGrid
 
+def new_model():
+    radiance_field = ZD_NeRFRadianceField().to(device)
+    optimizer = torch.optim.Adam(radiance_field.parameters(), lr=5e-4)
+    return radiance_field, optimizer
+
+
 if __name__ == "__main__":
 
     device = "cuda:0"
@@ -107,8 +113,7 @@ if __name__ == "__main__":
     # setup the radiance field we want to train.
     max_steps = args.max_steps
     grad_scaler = torch.cuda.amp.GradScaler(1)
-    radiance_field = ZD_NeRFRadianceField().to(device)
-    optimizer = torch.optim.Adam(radiance_field.parameters(), lr=5e-4)
+    radiance_field, optimizer = new_model()
     scheduler = torch.optim.lr_scheduler.MultiStepLR(
         optimizer,
         milestones=[
@@ -228,7 +233,7 @@ if __name__ == "__main__":
 
                 if(alive_ray_mask.long().sum() == 0):
                     if(attempts < 5):
-                        radiance_field = ZD_NeRFRadianceField().to(device)
+                        radiance_field, optimizer = new_model()
                         attempts += 1
                         step = 0
                         print("Model to failed to not keep enough rays alive, reseting. Attempt number:", attempts)
