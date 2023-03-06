@@ -250,7 +250,7 @@ class DivergenceFreeNeuralField(nn.Module):
 
         self.networks = networks
 
-        self.trace_params = torch.nn.ParameterList()
+        self.trace_params = torch.nn.ParameterList().to("cuda:0")
         for i in range(spatial_dims - 1):
             self.trace_params.append(torch.randn((1,)).to("cuda:0"))
 
