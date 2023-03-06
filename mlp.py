@@ -250,13 +250,13 @@ class DivergenceFreeNeuralField(nn.Module):
 
         self.networks = networks
 
-        self.trace_params = torch.nn.ParameterList().to("cuda:0")
+        self.trace_params = torch.nn.ParameterList()
         for i in range(spatial_dims - 1):
-            self.trace_params.append(torch.randn((1,)).to("cuda:0"))
+            self.trace_params.append(torch.randn((1,)))
 
     def forward(self, t: torch.Tensor, x: torch.Tensor):
         t = torch.zeros((x.shape[0], 1), device=t.device) + t
-        output = torch.zeros(x.shape[0], self.spatial_dims)
+        output = torch.zeros(x.shape[0], self.spatial_dims, device=x.device)
         trace_param_residual = torch.sum(torch.tensor(self.trace_params, device=x.device))
         for i in range(self.spatial_dims):
             # Remove ith dimension
