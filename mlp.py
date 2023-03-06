@@ -234,6 +234,7 @@ class SolenoidalField(nn.Module):
 class DivergenceFreeNeuralField(nn.Module):
     def __init__(self, spatial_dims=3, other_inputs=1, width=32, depth=8):
         super().__init__()
+
         self.spatial_dims = spatial_dims
         self.other_inputs = other_inputs
 
@@ -249,26 +250,25 @@ class DivergenceFreeNeuralField(nn.Module):
 
         self.networks = networks
 
-        self.no_trace_param = torch.nn.Parameter(torch.randn((1,)))
-        self.trace_scale = torch.nn.Parameter(torch.randn((1,)))
+        self.trace_params = torch.nn.ParameterList()
+        for i in range(spatial_dims - 1):
+            self.trace_params.append(torch.randn((1,)))
 
     def forward(self, t: torch.Tensor, x: torch.Tensor):
         t = torch.zeros((x.shape[0], 1), device=t.device) + t
-        output = torch.zeros(x.shape[0], self.spatial_dims, device=x.device)
+        output = torch.zeros(x.shape[0], self.spatial_dims)
+        trace_param_residual = torch.sum(torch.tensor(self.trace_params, device=x.device))
         for i in range(self.spatial_dims):
             # Remove ith dimension
-            """if(i == 0):
-                _x = torch.cat((x[:, i + 1 :], t), dim=1)
-            elif(i == self.spatial_dims - 1):
-                _x = torch.cat((x[:, 0:i], t), dim=1)
-            else:"""
             _x = torch.cat((x[:, 0:i], x[:, i + 1 :], t), dim=1)
             output[:, i] = self.networks[i](_x).squeeze()
-        a = torch.cos(self.no_trace_param)
-        b = torch.sin(self.no_trace_param)
-        output[:, 0] += self.trace_scale * a * x[:, 0]
-        output[:, 1] += self.trace_scale * b * x[:, 1]
-        output[:, 2] += self.trace_scale * (1.0 - (a + b)) * x[:, 2]
+            if(i < self.spatial_dims - 1):
+                output[:, i] += self.trace_params[i] * x[:, i]
+            else:
+                # The last dimension is the negative trace of the
+                # previous matrix if it was one dimension smaller
+                # The ensures the trace == 0
+                output[:, i] += -trace_param_residual * x[:, i]
         return output
     
 class NeuralField(nn.Module):
