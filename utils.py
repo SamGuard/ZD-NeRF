@@ -104,7 +104,7 @@ def render_image(
                 t_starts=t_starts,
                 t_ends=t_ends,
                 rgb_sigma_fn=rgb_sigma_fn,
-                n_rays=len(t_starts),
+                n_rays=num_rays,
                 ray_indices=packed_info,
                 render_bkgd=render_bkgd,
             )
