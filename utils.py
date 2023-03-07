@@ -100,12 +100,11 @@ def render_image(
             alpha_thre=alpha_thre,
         )
         if(t_starts.shape[0] > 0):
-            print(chunk)
             rgb, opacity, depth = rendering(
                 t_starts=t_starts,
                 t_ends=t_ends,
                 rgb_sigma_fn=rgb_sigma_fn,
-                n_rays=chunk,
+                n_rays=chunk_rays.origins.shape[0],
                 ray_indices=packed_info,
                 render_bkgd=render_bkgd,
             )
