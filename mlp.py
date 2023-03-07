@@ -459,7 +459,7 @@ class ZD_NeRFRadianceField(nn.Module):
                     nn.Tanh(),
                     nn.Linear(32, 32),
                     nn.Tanh(),
-                    nn.Linear(3, 32),
+                    nn.Linear(32, 3),
                 )
             )
         )
