@@ -193,7 +193,7 @@ if __name__ == "__main__":
                 )
 
                 # render
-                print("render image, num_rays:", num_rays)    
+                print("render image, num_rays:", train_dataset.num_rays)    
                 rgb, acc, depth, n_rendering_samples = render_image(
                     radiance_field,
                     occupancy_grid,
