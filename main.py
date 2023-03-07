@@ -21,7 +21,7 @@ from nerfacc import ContractionType, OccupancyGrid
 
 def new_model():
     radiance_field = ZD_NeRFRadianceField().to(device)
-    optimizer = torch.optim.Adam(radiance_field.parameters(), lr=5e-4)
+    optimizer = torch.optim.Adam(radiance_field.parameters(), lr=5e-5)
     return radiance_field, optimizer
 
 
@@ -126,7 +126,7 @@ if __name__ == "__main__":
     )
     # setup the dataset
     data_root_fp = "/home/ruilongli/data/dnerf/"
-    target_sample_batch_size = 1 << 15
+    target_sample_batch_size = 1 << 16
     grid_resolution = 64
 
     train_dataset = SubjectLoader(
@@ -162,24 +162,12 @@ if __name__ == "__main__":
     step = 0
     attempts = 0
     tic = time.time()
-    mode_switch_step = 5000
+    mode_switch_step = 10000
     num_data = len(train_dataset)
     if not args.just_render:
         for epoch in range(10000000):
             for i in range(len(train_dataset)):
                 radiance_field.train()
-                """
-                if(step == mode_switch_step):
-                    radiance_field.freeze_nerf()
-                """
-
-                """
-                # Use if freezing nerf
-                data = (
-                    train_dataset[int(num_data * random.random() * 0.5)]
-                    if step <= mode_switch_step
-                    else train_dataset[int(num_data // 2 + num_data * random.random() * 0.5)] #train_dataset[int(random.random() * len(train_dataset))]
-                )"""
 
                 data = (
                     train_dataset[int(num_data * random.random() * 0.5)]
