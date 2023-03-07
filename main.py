@@ -193,6 +193,7 @@ if __name__ == "__main__":
                 )
 
                 # render
+                print(rays.shape)
                 rgb, acc, depth, n_rendering_samples = render_image(
                     radiance_field,
                     occupancy_grid,
