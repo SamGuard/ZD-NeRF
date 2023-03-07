@@ -126,7 +126,7 @@ if __name__ == "__main__":
     )
     # setup the dataset
     data_root_fp = "/home/ruilongli/data/dnerf/"
-    target_sample_batch_size = 1 << 20
+    target_sample_batch_size = 1 << 18
     grid_resolution = 64
 
     train_dataset = SubjectLoader(
@@ -183,7 +183,7 @@ if __name__ == "__main__":
                     torch.zeros(size=(pixels.shape[0], 1), device="cuda:0")
                     + data["timestamps"]
                 )
-                print("update occupancy")
+
                 # update occupancy grid
                 occupancy_grid.every_n_step(
                     step=step,

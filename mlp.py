@@ -485,11 +485,8 @@ class ZD_NeRFRadianceField(nn.Module):
         self.frozen_nerf = copy.deepcopy(self.nerf)
 
     def forward(self, x, t, condition=None):
-        print(t, x.shape)
         if self.frozen_nerf != None:
             self.nerf = copy.deepcopy(self.frozen_nerf)
         x = self.warp(t.flatten(), x)
-        print("Done warp")
         out = self.nerf(x, condition=condition)
-        print("Done rgb")
         return out
