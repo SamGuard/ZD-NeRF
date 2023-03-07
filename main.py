@@ -28,7 +28,8 @@ def new_model():
 if __name__ == "__main__":
 
     device = "cuda:0"
-    set_random_seed(27)
+    #set_random_seed(27)
+    set_random_seed(int(time.time()))
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -221,6 +222,7 @@ if __name__ == "__main__":
 
                 if(alive_ray_mask.long().sum() == 0):
                     if(attempts < 5):
+                        set_random_seed(int(time.time()))
                         radiance_field, optimizer = new_model()
                         attempts += 1
                         step = 0
