@@ -21,7 +21,7 @@ from nerfacc import ContractionType, OccupancyGrid
 
 def new_model():
     radiance_field = ZD_NeRFRadianceField().to(device)
-    optimizer = torch.optim.Adam(radiance_field.parameters(), lr=5e-5)
+    optimizer = torch.optim.Adam(radiance_field.parameters(), lr=5e-4)
     return radiance_field, optimizer
 
 
