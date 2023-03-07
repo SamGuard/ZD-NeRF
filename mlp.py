@@ -163,47 +163,51 @@ class NerfMLP(nn.Module):
             x = torch.cat([bottleneck, condition], dim=-1)
         raw_rgb = self.rgb_layer(x)
         return raw_rgb, raw_sigma
-    
 
-class SolenoidalField(nn.Module):
+
+class CurlField(nn.Module):
     def __init__(self, neural_field):
         super().__init__()
         self.func: nn.Module = neural_field
 
     def predict(self, t, x):
-        #return self.test_func(x)
         return self.predict_batch(t, x.reshape(1, -1)).squeeze()
 
     def predict_batch(self, t, x):
-        #return self.test_func(x)
         x = torch.cat((x, torch.zeros(size=(len(x), 1), device=x.device) + t), dim=1)
         x = self.func(x)
         return x
-        
 
     def curl_func_3d(self, t: torch.Tensor, x: torch.Tensor):
         jac = torch.squeeze(vmap(jacrev(self.predict, argnums=(1)), (None, 0))(t, x))
         if len(jac.shape) == 2:
-            jac = jac.reshape(1, jac.shape[0], jac.shape[1])
-        A = jac.clone()
-        for i in range(3):
-            A[:, i, i] = 0.0
-        x_vec = x.unsqueeze(2)
-        return torch.bmm(A, x_vec).reshape(x.shape)
+            jac = jac.unsqueeze(0)
+        curl = torch.stack(
+            (
+                jac[:, 2, 1] - jac[:, 1, 2],
+                jac[:, 0, 2] - jac[:, 2, 0],
+                jac[:, 1, 0] - jac[:, 0, 1],
+            ),
+            dim=1,
+        )
+        return curl
 
     def print_jac_of_field(self, t: torch.Tensor, x: torch.Tensor):
-        jac = vmap(jacrev(self.curl_func_3d, argnums=(1)), (None, 0))(t, x.unsqueeze(1)).squeeze()
-        print(jac)    
+        jac = vmap(jacrev(self.curl_func_3d, argnums=(1)), (None, 0))(
+            t, x.unsqueeze(1)
+        ).squeeze()
+        print(jac)
 
     def forward(self, t, x):
-        return self.curl_func_3d(t, x)
+        out = self.curl_func_3d(t, x)
+        return out
 
     def get_base_func(self, t, x):
         """
         Get the output of the function without removing div
         For testing/visualisation
         """
-        return vmap(self.predict, in_dims=(None, 0))(t, x)
+        return self.predict_batch(t, x)
 
     def get_div(self, t: torch.Tensor, x: torch.Tensor):
         """
@@ -211,18 +215,6 @@ class SolenoidalField(nn.Module):
         """
         x = x.reshape(x.shape[0], 1, x.shape[1])
         div_func = jacrev(self.curl_func_3d, argnums=1)
-        return torch.sum(
-            vmap(lambda t, x: torch.trace(div_func(t, x).squeeze()), in_dims=(None, 0))(
-                t, x
-            ),
-            dim=0,
-        )
-
-    def get_div_base(self, t, x):
-        """
-        Get the diveregence of the function before div is removed
-        """
-        div_func = jacrev(self.predict, argnums=1)
         return torch.sum(
             vmap(lambda t, x: torch.trace(div_func(t, x).squeeze()), in_dims=(None, 0))(
                 t, x
@@ -257,12 +249,14 @@ class DivergenceFreeNeuralField(nn.Module):
     def forward(self, t: torch.Tensor, x: torch.Tensor):
         t = torch.zeros((x.shape[0], 1), device=t.device) + t
         output = torch.zeros(x.shape[0], self.spatial_dims, device=x.device)
-        trace_param_residual = torch.sum(torch.tensor(self.trace_params, device=x.device))
+        trace_param_residual = torch.sum(
+            torch.tensor(self.trace_params, device=x.device)
+        )
         for i in range(self.spatial_dims):
             # Remove ith dimension
             _x = torch.cat((x[:, 0:i], x[:, i + 1 :], t), dim=1)
             output[:, i] = self.networks[i](_x).squeeze()
-            if(i < self.spatial_dims - 1):
+            if i < self.spatial_dims - 1:
                 output[:, i] += self.trace_params[i] * x[:, i]
             else:
                 # The last dimension is the negative trace of the
@@ -270,7 +264,8 @@ class DivergenceFreeNeuralField(nn.Module):
                 # The ensures the trace == 0
                 output[:, i] += -trace_param_residual * x[:, i]
         return output
-    
+
+
 class NeuralField(nn.Module):
     def __init__(self, in_dim, out_dim, width=32, depth=8):
         super().__init__()
@@ -450,11 +445,10 @@ class ZD_NeRFRadianceField(nn.Module):
         self,
     ) -> None:
         super().__init__()
-        # self.warp = ODEBlock_torchdiffeq(ODEFunc(input_dim=4, output_dim=3, width=32, depth=5))
-        #self.warp = ODEBlock_torchdiffeq(
-        #    SolenoidalField(NeuralField(4, 3, 64, 6)))
-        self.warp = ODEBlock_torchdiffeq(DivergenceFreeNeuralField(3, 1, 32, 8))
-        #self.warp = ODEBlock_torchdiffeq(NeuralField(4, 3, 32, 6))
+        # self.warp = ODEBlock_torchdiffeq(NeuralField(4, 3, 32, 6))
+        self.warp = ODEBlock_torchdiffeq(CurlField(NeuralField(4, 3, 64, 6)))
+        # self.warp = ODEBlock_torchdiffeq(DivergenceFreeNeuralField(3, 1, 32, 8))
+
         self.nerf = VanillaNeRFRadianceField()
         self.frozen_nerf = None
 
