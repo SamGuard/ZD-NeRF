@@ -332,8 +332,8 @@ if __name__ == "__main__":
                     ),
                 )
 
-            for t in map(lambda x: x / num_time, range(num_time)):
-                for i in [0]:  # range(len(test_dataset)):
+            for t in [0]: #map(lambda x: x / num_time, range(num_time)):
+                for i in range(len(test_dataset)): # [0]:
                     data = test_dataset[i]
                     render_bkgd = data["color_bkgd"]
                     rays = data["rays"]
