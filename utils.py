@@ -101,10 +101,10 @@ def render_image(
         )
         if(t_starts.shape[0] > 0):
             rgb, opacity, depth = rendering(
-                rgb_sigma_fn,
-                packed_info,
-                t_starts,
-                t_ends,
+                t_starts=t_starts,
+                t_ends=t_ends,
+                rgb_sigma_fn=rgb_sigma_fn,
+                ray_indices=packed_info,
                 render_bkgd=render_bkgd,
             )
             #print("SHAPES", rgb.shape, opacity.shape, depth.shape, len(t_starts))
