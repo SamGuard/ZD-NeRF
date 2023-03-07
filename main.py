@@ -204,7 +204,7 @@ if __name__ == "__main__":
                     render_step_size=render_step_size,
                     render_bkgd=render_bkgd,
                     cone_angle=args.cone_angle,
-                    alpha_thre=0.01 if step > 1000 else 0.00,
+                    alpha_thre=0.01, #if step > 1000 else 0.00,
                     # dnerf options
                     timestamps=timestamps,
                 )
