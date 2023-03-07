@@ -83,12 +83,9 @@ def render_image(
         if radiance_field.training
         else test_chunk_size
     )
-    
+
     for i in range(0, num_rays, chunk):
         chunk_rays = namedtuple_map(lambda r: r[i : i + chunk], rays)
-        print(i)
-        print(chunk_rays.origins.shape)
-        print(chunk_rays.viewdirs.shape)
         packed_info, t_starts, t_ends = ray_marching(
             chunk_rays.origins,
             chunk_rays.viewdirs,
