@@ -55,6 +55,7 @@ if __name__ == "__main__":
             "trex",
             "basic_sphere",
             "basic_sphere_2",
+            "world_deform"
         ],
         help="which scene to use",
     )
