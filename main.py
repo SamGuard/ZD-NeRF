@@ -163,7 +163,7 @@ if __name__ == "__main__":
     step = 0
     attempts = 0
     tic = time.time()
-    mode_switch_step = 30000
+    mode_switch_step = 5000
     num_data = len(train_dataset)
     if not args.just_render:
         for epoch in range(10000000):
