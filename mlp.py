@@ -439,16 +439,7 @@ class DNeRFRadianceField(nn.Module):
         )
         return self.nerf(x, condition=condition)
 
-
-class ZD_NeRFRadianceField(nn.Module):
-    def __init__(
-        self,
-    ) -> None:
-        super().__init__()
-        # self.warp = ODEBlock_torchdiffeq(NeuralField(4, 3, 32, 6))
-        self.warp = ODEBlock_torchdiffeq(
-            CurlField(
-                nn.Sequential(
+NeuralNet = nn.Sequential(
                     nn.Linear(4, 32),
                     nn.Tanh(),
                     nn.Linear(32, 32),
@@ -461,9 +452,15 @@ class ZD_NeRFRadianceField(nn.Module):
                     nn.Tanh(),
                     nn.Linear(32, 3),
                 )
-            )
-        )
-        # self.warp = ODEBlock_torchdiffeq(DivergenceFreeNeuralField(3, 1, 32, 8))
+
+class ZD_NeRFRadianceField(nn.Module):
+    def __init__(
+        self,
+    ) -> None:
+        super().__init__()
+        # self.warp = ODEBlock_torchdiffeq(NeuralField(4, 3, 32, 6))
+        # self.warp = ODEBlock_torchdiffeq(CurlField(NeuralNet))
+        self.warp = ODEBlock_torchdiffeq(DivergenceFreeNeuralField(3, 1, 16, 8))
 
         self.nerf = VanillaNeRFRadianceField()
         self.frozen_nerf = None
