@@ -6,7 +6,7 @@ import numpy as np
 
 DEBUG = False
 
-VIEWS = 5
+VIEWS = 25
 RESOLUTION = 800
 RESULTS_PATH = "/home/sam/projects/nerf_projects/data/basic_sphere_2/val"
 DEPTH_SCALE = 1.4
