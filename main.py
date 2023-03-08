@@ -170,11 +170,14 @@ if __name__ == "__main__":
             for i in range(len(train_dataset)):
                 radiance_field.train()
 
-                data = (
-                    train_dataset[int(num_data * random.random() * 0.5)]
-                    if step <= mode_switch_step
-                    else train_dataset[int(random.random() * len(train_dataset))]
-                )
+                if(train_in_order):
+                    data = (
+                        train_dataset[int(num_data * random.random() * 0.5)]
+                        if step <= mode_switch_step
+                        else train_dataset[int(random.random() * len(train_dataset))]
+                    )
+                else:
+                    data = train_dataset[i]
 
                 render_bkgd = data["color_bkgd"]
                 rays = data["rays"]
