@@ -19,6 +19,7 @@ from utils import render_image, set_random_seed
 
 from nerfacc import ContractionType, OccupancyGrid
 
+
 def new_model():
     radiance_field = ZD_NeRFRadianceField().to(device)
     optimizer = torch.optim.Adam(radiance_field.parameters(), lr=5e-4)
@@ -26,9 +27,8 @@ def new_model():
 
 
 if __name__ == "__main__":
-
     device = "cuda:0"
-    #set_random_seed(27)
+    # set_random_seed(27)
     set_random_seed(int(time.time()))
 
     parser = argparse.ArgumentParser()
@@ -55,7 +55,7 @@ if __name__ == "__main__":
             "trex",
             "basic_sphere",
             "basic_sphere_2",
-            "world_deform"
+            "world_deform",
         ],
         help="which scene to use",
     )
@@ -171,23 +171,27 @@ if __name__ == "__main__":
             for i in range(len(train_dataset)):
                 radiance_field.train()
 
-                if(train_in_order):
+                # if train in order then train on images at t=0.0 then proceed to train on
+                # the rest of the dataset
+                # data["timestamps"] is a single number if train in order is true, 
+                # Otherwise its a tensor
+                if train_in_order:
                     data = (
                         train_dataset[int(num_data * random.random() * 0.5)]
                         if step <= mode_switch_step
                         else train_dataset[int(random.random() * len(train_dataset))]
                     )
+                    timestamps = (
+                        torch.zeros(size=(pixels.shape[0], 1), device="cuda:0")
+                        + data["timestamps"]
+                    )
                 else:
                     data = train_dataset[i]
+                    timestamps = data["timestamps"]
 
                 render_bkgd = data["color_bkgd"]
                 rays = data["rays"]
                 pixels = data["pixels"]
-                # timestamps = data["timestamps"]
-                timestamps = (
-                    torch.zeros(size=(pixels.shape[0], 1), device="cuda:0")
-                    + data["timestamps"]
-                )
 
                 # update occupancy grid
                 occupancy_grid.every_n_step(
@@ -224,15 +228,18 @@ if __name__ == "__main__":
                 train_dataset.update_num_rays(num_rays)
                 alive_ray_mask = acc.squeeze(-1) > 0
 
-                if(alive_ray_mask.long().sum() == 0):
-                    if(attempts < 5):
+                if alive_ray_mask.long().sum() == 0:
+                    if attempts < 5:
                         set_random_seed(int(time.time()))
                         radiance_field, optimizer = new_model()
                         attempts += 1
                         step = 0
-                        print("Model to failed to not keep enough rays alive, reseting. Attempt number:", attempts)
+                        print(
+                            "Model to failed to not keep enough rays alive, reseting. Attempt number:",
+                            attempts,
+                        )
                         continue
-                    else:        
+                    else:
                         print("No rays hit target, exiting")
                         exit(-1)
 
@@ -339,7 +346,7 @@ if __name__ == "__main__":
                 )
 
             for t in map(lambda x: x / num_time, range(num_time)):
-                for i in [6]: #range(len(test_dataset)):
+                for i in [6]:  # range(len(test_dataset)):
                     data = test_dataset[i]
                     render_bkgd = data["color_bkgd"]
                     rays = data["rays"]
