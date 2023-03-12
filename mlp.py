@@ -293,12 +293,9 @@ class ODEBlock_torchdiffeq(nn.Module):
             return torch.zeros_like(x)
 
         # Need to sort in order of time
-        print(t.shape)
         time_steps, args = torch.unique(t, sorted=True, return_inverse=True)
-        print("done unique")
         time_steps = torch.flip(time_steps, dims=(0,))
-        args = t.shape[0] - args - 1
-        print(args)
+        args = time_steps.shape[0] - args - 1
 
         if len(time_steps) == 1 and time_steps[0] == 0.0:
             return x
