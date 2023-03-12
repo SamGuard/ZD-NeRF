@@ -300,10 +300,10 @@ class ODEBlock_torchdiffeq(nn.Module):
         if len(time_steps) == 1 and time_steps[0] == 0.0:
             return x
 
-        needs_zero = True
+        has_zero = True
         if not torch.any(time_steps == 0.0):
-            needs_zero = False
-            time_steps = torch.cat((torch.tensor([0]).to("cuda:0"), time_steps), dim=0)
+            has_zero = False
+            time_steps = torch.cat((time_steps, torch.tensor([0]).to("cuda:0")), dim=0)
 
         # Morphed points
         morphed = torchdiffeq_odeint(
@@ -313,8 +313,8 @@ class ODEBlock_torchdiffeq(nn.Module):
             rtol=1e-4,
             atol=1e-3,
         )
-        if not needs_zero:
-            morphed = morphed[1:]
+        if not has_zero:
+            morphed = morphed[:-1]
         # Morphed points contains an array which is of the form:
         # morphed[time_stamp][index]
         # As this list is in order of time we need to convert it back to how the time steps were before sorting
