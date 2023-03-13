@@ -234,6 +234,7 @@ class DivergenceFreeNeuralField(nn.Module):
         networks = nn.ModuleList()
         for i in range(spatial_dims):
             layers = nn.Sequential(nn.Linear(spatial_dims + other_inputs - 1, width))
+            layers.append(nn.Tanh())
             for i in range(depth - 2):
                 layers.append(nn.Linear(width, width))
                 layers.append(nn.Tanh())
