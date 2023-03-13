@@ -322,6 +322,9 @@ class ODEBlock_torchdiffeq(nn.Module):
         # To this we index by the args array, which will give all points at a given time
         # Then indexing by r gives the morphed point at the time given
         r = torch.linspace(0, x.shape[0] - 1, x.shape[0], dtype=torch.long)
+        print(morphed)
+        print("------\n\n")
+        print(r)
 
         out = morphed[args, r]
 
