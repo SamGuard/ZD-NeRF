@@ -306,6 +306,7 @@ class ODEBlock_torchdiffeq(nn.Module):
             time_steps = torch.cat((time_steps, torch.tensor([0]).to("cuda:0")), dim=0)
 
         # Morphed points
+        print(time_steps)
         morphed = torchdiffeq_odeint(
             self.odefunc,
             x,
