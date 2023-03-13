@@ -233,12 +233,12 @@ class DivergenceFreeNeuralField(nn.Module):
         # One full network for each output dim
         networks = nn.ModuleList()
         for i in range(spatial_dims):
-            layers = [nn.Linear(spatial_dims + other_inputs - 1, width)]
+            layers = nn.Sequential(nn.Linear(spatial_dims + other_inputs - 1, width))
             for i in range(depth - 2):
                 layers.append(nn.Linear(width, width))
                 layers.append(nn.Tanh())
             layers.append(nn.Linear(width, 1))
-            networks.append(nn.Sequential(layers))
+            networks.append(layers)
 
         self.networks = networks
 
