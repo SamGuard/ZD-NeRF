@@ -308,8 +308,10 @@ class ODEBlock_torchdiffeq(nn.Module):
         for i,_t in enumerate(time_steps):
             x_index = (args == i).nonzero().squeeze(dim=1)
             t_tensor = torch.tensor([_t, 0.0], device=x.device)
-            print(x[x_index])
+            print(x_index)
+            print(x_index.shape)
             warped = torchdiffeq_odeint(self.odefunc, x[x_index], t_tensor)[-1]
+            print(warped.shape)
             x[x_index] = warped
         
         return x
