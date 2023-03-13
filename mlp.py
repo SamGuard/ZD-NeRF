@@ -290,23 +290,25 @@ class ODEBlock_torchdiffeq(nn.Module):
 
 
     def forward(self, t: torch.Tensor, x: torch.Tensor):
-        print("_--------------------_")
-        print("t")
-        print(t)
+        
         time_steps, args = torch.unique(t, sorted=True, return_inverse=True)
         args: torch.Tensor
         time_steps: torch.Tensor
+
+        if len(time_steps) == 1 and time_steps[0] == 0.0:
+            return x
+        print("_--------------------_")
+        print("t")
+        print(t)
         print("time_steps")
         print(time_steps)
         print("args")
         print(args)
-
-        if len(time_steps) == 1 and time_steps[0] == 0.0:
-            return x
         
         for i,_t in enumerate(time_steps):
             x_index = (args == i).nonzero().squeeze(dim=1)
             t_tensor = torch.tensor([_t, 0.0], device=x.device)
+            print(x[warped])
             warped = torchdiffeq_odeint(self.odefunc, x[x_index], t_tensor)[-1]
             print(f"i={i}, t={_t}")
             print(warped)
