@@ -304,11 +304,11 @@ class ODEBlock_torchdiffeq(nn.Module):
         print(time_steps)
         print("args")
         print(args)
-        
+
         for i,_t in enumerate(time_steps):
             x_index = (args == i).nonzero().squeeze(dim=1)
             t_tensor = torch.tensor([_t, 0.0], device=x.device)
-            print(x[warped])
+            print(x[x_index])
             warped = torchdiffeq_odeint(self.odefunc, x[x_index], t_tensor)[-1]
             print(f"i={i}, t={_t}")
             print(warped)
