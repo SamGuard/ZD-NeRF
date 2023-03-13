@@ -238,6 +238,8 @@ class DivergenceFreeNeuralField(nn.Module):
                 layers.append(nn.Linear(width, width))
                 layers.append(nn.Tanh())
             layers.append(nn.Linear(width, 1))
+            print(layers)
+            print(*layers)
             networks.append(nn.Sequential(*layers))
 
         self.networks = networks
