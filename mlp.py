@@ -297,21 +297,18 @@ class ODEBlock_torchdiffeq(nn.Module):
 
         if len(time_steps) == 1 and time_steps[0] == 0.0:
             return x
-        print("_--------------------_")
+        """print("_--------------------_")
         print("t")
         print(t)
         print("time_steps")
         print(time_steps)
         print("args")
-        print(args)
+        print(args)"""
 
         for i,_t in enumerate(time_steps):
             x_index = (args == i).nonzero().squeeze(dim=1)
             t_tensor = torch.tensor([_t, 0.0], device=x.device)
-            print("x_index", x_index)
-            print(x_index.shape)
             warped = torchdiffeq_odeint(self.odefunc, x[x_index], t_tensor)[-1]
-            print(warped.shape)
             x[x_index] = warped
         
         return x
@@ -490,9 +487,9 @@ class ZD_NeRFRadianceField(nn.Module):
         self,
     ) -> None:
         super().__init__()
-        # self.warp = ODEBlock_torchdiffeq(NeuralField(4, 3, 32, 6))
+        self.warp = ODEBlock_torchdiffeq(NeuralField(4, 3, 32, 6))
         # self.warp = ODEBlock_torchdiffeq(CurlField(NeuralNet))
-        self.warp = ODEBlock_torchdiffeq(DivergenceFreeNeuralField(3, 1, 16, 8))
+        # self.warp = ODEBlock_torchdiffeq(DivergenceFreeNeuralField(3, 1, 16, 8))
 
         self.nerf = VanillaNeRFRadianceField()
         self.frozen_nerf = None
