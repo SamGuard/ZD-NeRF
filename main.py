@@ -183,7 +183,7 @@ if __name__ == "__main__":
                         else train_dataset[int(random.random() * len(train_dataset))]
                     )
                     timestamps = (
-                        torch.zeros(size=(pixels.shape[0], 1), device="cuda:0")
+                        torch.zeros(size=(data["pixels"].shape[0], 1), device="cuda:0")
                         + data["timestamps"]
                     )
                 else:
