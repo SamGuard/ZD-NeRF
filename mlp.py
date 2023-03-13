@@ -487,8 +487,8 @@ class ZD_NeRFRadianceField(nn.Module):
         self,
     ) -> None:
         super().__init__()
-        self.warp = ODEBlock_torchdiffeq(NeuralField(4, 3, 32, 6))
-        # self.warp = ODEBlock_torchdiffeq(CurlField(NeuralNet))
+        # self.warp = ODEBlock_torchdiffeq(NeuralField(4, 3, 32, 6))
+        self.warp = ODEBlock_torchdiffeq(CurlField(NeuralNet))
         # self.warp = ODEBlock_torchdiffeq(DivergenceFreeNeuralField(3, 1, 16, 8))
 
         self.nerf = VanillaNeRFRadianceField()
