@@ -137,7 +137,7 @@ if __name__ == "__main__":
         root_fp=data_root_fp,
         split=args.train_split,
         num_rays=target_sample_batch_size // render_n_samples,
-        batch_over_images=not train_in_order,
+        batch_over_images=False,
     )
     train_dataset.images = train_dataset.images.to(device)
     train_dataset.camtoworlds = train_dataset.camtoworlds.to(device)
@@ -187,7 +187,7 @@ if __name__ == "__main__":
                         + data["timestamps"]
                     )
                 else:
-                    data = train_dataset[i]
+                    data = train_dataset[int(random.random() * len(train_dataset))]
                     timestamps = data["timestamps"]
 
                 render_bkgd = data["color_bkgd"]
