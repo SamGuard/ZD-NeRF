@@ -298,29 +298,13 @@ class ODEBlock_torchdiffeq(nn.Module):
 
         if len(time_steps) == 1 and time_steps[0] == 0.0:
             return x
-        print("_--------------------_")
-        print("t")
-        print(t)
-        print("time_steps")
-        print(time_steps)
-        print("args")
-        print(args)
 
         for i,_t in enumerate(time_steps):
             if(_t == 0.0): continue
             x_index = (args == i).nonzero().squeeze(dim=1)
             t_tensor = torch.tensor([_t, 0.0], device=x.device)
             warped = torchdiffeq_odeint(self.odefunc, x[x_index], t_tensor)
-            print("x")
-            print(x[x_index])
             x[x_index] = warped[-1]
-            print("t_tensor")
-            print(t_tensor)
-            print("warped")
-            print(warped)
-            print("x_index")
-            print(x_index)
-            print(0/0)
         return x
 
     """ 
