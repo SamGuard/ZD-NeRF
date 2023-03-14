@@ -298,13 +298,13 @@ class ODEBlock_torchdiffeq(nn.Module):
 
         if len(time_steps) == 1 and time_steps[0] == 0.0:
             return x
-        """print("_--------------------_")
+        print("_--------------------_")
         print("t")
         print(t)
         print("time_steps")
         print(time_steps)
         print("args")
-        print(args)"""
+        print(args)
 
         for i,_t in enumerate(time_steps):
             if(_t == 0.0): continue
