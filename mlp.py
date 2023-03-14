@@ -316,9 +316,7 @@ class ODEBlock_torchdiffeq(nn.Module):
             print(warped)
             print("x_index")
             print(x_index)
-            
-
-        print(0/0)
+            print(0/0)
         return x
 
     """ 
