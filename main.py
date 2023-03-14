@@ -352,7 +352,7 @@ if __name__ == "__main__":
                     render_bkgd = data["color_bkgd"]
                     rays = data["rays"]
                     pixels = data["pixels"]
-                    timestamps[0][0] = t
+                    timestamps[0][0] = 10*t
 
                     occupancy_grid._update(
                         step=step,
