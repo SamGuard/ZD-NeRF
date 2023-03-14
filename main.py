@@ -138,7 +138,7 @@ if __name__ == "__main__":
         root_fp=data_root_fp,
         split=args.train_split,
         num_rays=target_sample_batch_size // render_n_samples,
-        batch_over_images=not train_in_order,
+        batch_over_images=False,
     )
     train_dataset.images = train_dataset.images.to(device)
     train_dataset.camtoworlds = train_dataset.camtoworlds.to(device)
@@ -183,17 +183,16 @@ if __name__ == "__main__":
                         if step <= mode_switch_step
                         else train_dataset[int(random.random() * len(train_dataset))]
                     )
-                    timestamps = (
-                        torch.zeros(size=(pixels.shape[0], 1), device="cuda:0")
-                        + data["timestamps"]
-                    )
                 else:
-                    data = train_dataset[i]
-                    timestamps = data["timestamps"]
+                    data = train_dataset[int(random.random() * len(train_dataset))]
 
                 render_bkgd = data["color_bkgd"]
                 rays = data["rays"]
                 pixels = data["pixels"]
+                timestamps = (
+                        torch.zeros(size=(pixels.shape[0], 1), device="cuda:0")
+                        + data["timestamps"]
+                    )
 
                 # update occupancy grid
                 occupancy_grid.every_n_step(

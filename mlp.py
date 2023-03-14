@@ -233,12 +233,13 @@ class DivergenceFreeNeuralField(nn.Module):
         # One full network for each output dim
         networks = nn.ModuleList()
         for i in range(spatial_dims):
-            layers = [nn.Linear(spatial_dims + other_inputs - 1, width)]
+            layers = nn.Sequential(nn.Linear(spatial_dims + other_inputs - 1, width))
+            layers.append(nn.Tanh())
             for i in range(depth - 2):
                 layers.append(nn.Linear(width, width))
                 layers.append(nn.Tanh())
             layers.append(nn.Linear(width, 1))
-            networks.append(nn.Sequential(*layers))
+            networks.append(layers)
 
         self.networks = networks
 
@@ -288,14 +289,42 @@ class ODEBlock_torchdiffeq(nn.Module):
         super().__init__()
         self.odefunc = odefunc
 
+
+    def forward(self, t: torch.Tensor, x: torch.Tensor):
+        
+        time_steps, args = torch.unique(t, sorted=True, return_inverse=True)
+        args: torch.Tensor
+        time_steps: torch.Tensor
+
+        if len(time_steps) == 1 and time_steps[0] == 0.0:
+            return x
+        """print("_--------------------_")
+        print("t")
+        print(t)
+        print("time_steps")
+        print(time_steps)
+        print("args")
+        print(args)"""
+
+        for i,_t in enumerate(time_steps):
+            if(_t == 0.0): continue
+            x_index = (args == i).nonzero().squeeze(dim=1)
+            t_tensor = torch.tensor([_t, 0.0], device=x.device)
+            warped = torchdiffeq_odeint(self.odefunc, x[x_index], t_tensor)[-1]
+            x[x_index] = warped
+        
+        return x
+
+    """ 
+    Old code, does not work if there are more than 2 time stamps (during training).
+    For example it will work if there is only data at t=0.0 and t=1.0, but no if
+    there is data at t=0.0,0.5,1.0 as it only works forward in time.
     def forward(self, t: torch.Tensor, x: torch.Tensor):
         if len(x) == 0:
             return torch.zeros_like(x)
 
         # Need to sort in order of time
         time_steps, args = torch.unique(t, sorted=True, return_inverse=True)
-        time_steps = torch.flip(time_steps, dims=(0,))
-        args = time_steps.shape[0] - args - 1
 
         if len(time_steps) == 1 and time_steps[0] == 0.0:
             return x
@@ -303,9 +332,9 @@ class ODEBlock_torchdiffeq(nn.Module):
         has_zero = True
         if not torch.any(time_steps == 0.0):
             has_zero = False
-            time_steps = torch.cat((time_steps, torch.tensor([0]).to("cuda:0")), dim=0)
+            time_steps = torch.cat((torch.tensor([0]).to("cuda:0"), time_steps), dim=0)
 
-        # Morphed points
+        # Morphed points    
         morphed = torchdiffeq_odeint(
             self.odefunc,
             x,
@@ -314,7 +343,7 @@ class ODEBlock_torchdiffeq(nn.Module):
             atol=1e-3,
         )
         if not has_zero:
-            morphed = morphed[:-1]
+            morphed = morphed[1:]
         # Morphed points contains an array which is of the form:
         # morphed[time_stamp][index]
         # As this list is in order of time we need to convert it back to how the time steps were before sorting
@@ -324,7 +353,7 @@ class ODEBlock_torchdiffeq(nn.Module):
 
         out = morphed[args, r]
 
-        return out
+        return out"""
 
 
 class SinusoidalEncoder(nn.Module):
@@ -462,7 +491,7 @@ class ZD_NeRFRadianceField(nn.Module):
         super().__init__()
         # self.warp = ODEBlock_torchdiffeq(NeuralField(4, 3, 32, 6))
         # self.warp = ODEBlock_torchdiffeq(CurlField(NeuralNet))
-        self.warp = ODEBlock_torchdiffeq(DivergenceFreeNeuralField(3, 1, 16, 8))
+        self.warp = ODEBlock_torchdiffeq(DivergenceFreeNeuralField(3, 1, 16, 6))
 
         self.nerf = VanillaNeRFRadianceField()
         self.frozen_nerf = None
