@@ -312,6 +312,8 @@ class ODEBlock_torchdiffeq(nn.Module):
             t_tensor = torch.tensor([_t, 0.0], device=x.device)
             warped = torchdiffeq_odeint(self.odefunc, x[x_index], t_tensor)
             x[x_index] = warped[-1]
+            print("t_tensor")
+            print(t_tensor)
             print("warped")
             print(warped)
             print("x_index")
