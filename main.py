@@ -182,17 +182,16 @@ if __name__ == "__main__":
                         if step <= mode_switch_step
                         else train_dataset[int(random.random() * len(train_dataset))]
                     )
-                    timestamps = (
-                        torch.zeros(size=(data["pixels"].shape[0], 1), device="cuda:0")
-                        + data["timestamps"]
-                    )
                 else:
                     data = train_dataset[int(random.random() * len(train_dataset))]
-                    timestamps = data["timestamps"]
 
                 render_bkgd = data["color_bkgd"]
                 rays = data["rays"]
                 pixels = data["pixels"]
+                timestamps = (
+                        torch.zeros(size=(pixels.shape[0], 1), device="cuda:0")
+                        + data["timestamps"]
+                    )
 
                 # update occupancy grid
                 occupancy_grid.every_n_step(
