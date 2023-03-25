@@ -16,6 +16,7 @@ import tqdm
 from datasets.dnerf_synthetic import SubjectLoader
 from mlp import ZD_NeRFRadianceField
 from utils import render_image, set_random_seed
+from flow_trainer import train_flow_field
 
 from nerfacc import ContractionType, OccupancyGrid
 
@@ -144,6 +145,7 @@ if __name__ == "__main__":
     train_dataset.camtoworlds = train_dataset.camtoworlds.to(device)
     train_dataset.K = train_dataset.K.to(device)
     train_dataset.timestamps = train_dataset.timestamps.to(device)
+    train_dataset.points_data = train_dataset.points_data.to(device)
 
     test_dataset = SubjectLoader(
         subject_id=args.scene,
