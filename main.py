@@ -173,7 +173,7 @@ if __name__ == "__main__":
     num_data = len(train_dataset)
     if not args.just_render:
         # Warm up the flow field
-        train_flow_field(radiance_field.warp, train_dataset.points_data[0], train_dataset.points_data[1], 1000)
+        train_flow_field(radiance_field.warp, train_dataset.points_time, train_dataset.points_data, 1000)
         for epoch in range(10000000):
             for i in range(len(train_dataset)):
                 radiance_field.train()
