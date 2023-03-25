@@ -145,6 +145,7 @@ if __name__ == "__main__":
     train_dataset.camtoworlds = train_dataset.camtoworlds.to(device)
     train_dataset.K = train_dataset.K.to(device)
     train_dataset.timestamps = train_dataset.timestamps.to(device)
+    train_dataset.points_time = train_dataset.points_time.to(device)
     train_dataset.points_data = train_dataset.points_data.to(device)
 
     test_dataset = SubjectLoader(

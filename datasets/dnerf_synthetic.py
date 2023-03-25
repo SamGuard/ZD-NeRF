@@ -135,7 +135,7 @@ class SubjectLoader(torch.utils.data.Dataset):
             self.focal,
             self.timestamps,
         ) = _load_renderings(json_data, data_dir)
-        self.points_data = load_verts(json_data) if ("vertices" in json_data) else None
+        (self.points_time, self.points_data) = load_verts(json_data) if ("vertices" in json_data) else None
         self.images = torch.from_numpy(self.images).to(torch.uint8)
         self.camtoworlds = torch.from_numpy(self.camtoworlds).to(torch.float32)
         self.timestamps = torch.from_numpy(self.timestamps).to(torch.float32)[:, None]
