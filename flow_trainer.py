@@ -26,6 +26,7 @@ def train_flow_field(warp: nn.Module, timestamps: torch.Tensor, points: torch.Te
                 # grad_scaler.scale(loss).backward()
                 loss.backward()
                 optimizer.step()
+                print(f"flow field: step {step} loss {loss}")
                 step += 1
 
 """
