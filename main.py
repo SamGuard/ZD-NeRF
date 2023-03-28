@@ -169,11 +169,11 @@ if __name__ == "__main__":
     step = 0
     attempts = 0
     tic = time.time()
-    mode_switch_step = 5000
+    mode_switch_step = 10000
     num_data = len(train_dataset)
     if not args.just_render:
         # Warm up the flow field
-        train_flow_field(radiance_field.warp, train_dataset.points_time, train_dataset.points_data, 1000)
+        train_flow_field(radiance_field.warp, train_dataset.points_time, train_dataset.points_data, 500)
         for epoch in range(10000000):
             for i in range(len(train_dataset)):
                 radiance_field.train()
@@ -184,7 +184,7 @@ if __name__ == "__main__":
                 # Otherwise its a tensor
                 if train_in_order:
                     data = (
-                        train_dataset[int(num_data * random.random() * 0.5)]
+                        train_dataset[int(14 * random.random())]
                         if step <= mode_switch_step
                         else train_dataset[int(random.random() * len(train_dataset))]
                     )
@@ -235,7 +235,8 @@ if __name__ == "__main__":
                 alive_ray_mask = acc.squeeze(-1) > 0
 
                 if alive_ray_mask.long().sum() == 0:
-                    if attempts < 5:
+                    # TEMPORARILY DISABLED FIX LATER
+                    if attempts < 0:
                         set_random_seed(int(time.time()))
                         radiance_field, optimizer = new_model()
                         attempts += 1
