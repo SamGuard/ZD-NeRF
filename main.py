@@ -174,7 +174,6 @@ if __name__ == "__main__":
     num_data = len(train_dataset)
     if not args.just_render:
         # Warm up the flow field
-        train_flow_field(radiance_field.warp, train_dataset.points_time, train_dataset.points_data, 500)
         for epoch in range(10000000):
             for i in range(len(train_dataset)):
                 radiance_field.train()
@@ -191,6 +190,10 @@ if __name__ == "__main__":
                     )
                 else:
                     data = train_dataset[int(random.random() * len(train_dataset))]
+                
+                if(step == mode_switch_step):
+                    train_flow_field(radiance_field.warp, train_dataset.points_time, train_dataset.points_data, 500)
+
 
                 render_bkgd = data["color_bkgd"]
                 rays = data["rays"]
@@ -236,8 +239,7 @@ if __name__ == "__main__":
                 alive_ray_mask = acc.squeeze(-1) > 0
 
                 if alive_ray_mask.long().sum() == 0:
-                    # TEMPORARILY DISABLED FIX LATER
-                    if attempts < 0:
+                    if attempts < 10:
                         set_random_seed(int(time.time()))
                         radiance_field, optimizer = new_model()
                         attempts += 1
