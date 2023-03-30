@@ -243,7 +243,7 @@ if __name__ == "__main__":
                     num_rays * (target_sample_batch_size / float(n_rendering_samples))
                 )
                 # TEMPORARY FIX, CHANGE 40000 TO arg
-                num_rays = min(40000, num_rays)
+                num_rays = max(min(40000, num_rays), 100)
                 train_dataset.update_num_rays(num_rays)
                 alive_ray_mask = acc.squeeze(-1) > 0
 
