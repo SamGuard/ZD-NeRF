@@ -63,7 +63,7 @@ def _load_renderings(meta: any, data_dir: str):
 
 def load_verts(json_file: any) -> Tuple[torch.Tensor, torch.Tensor]:
     verts_data = json_file["vertices"]
-    
+
     out_points = []
     out_times = torch.zeros(size=(len(verts_data),))
     for t_index, time_frame in enumerate(verts_data):
@@ -72,8 +72,8 @@ def load_verts(json_file: any) -> Tuple[torch.Tensor, torch.Tensor]:
         num_verts = len(verts)
         verts_pos = torch.zeros(size=(num_verts, 3)).to(torch.float32)
         verts_index = torch.zeros(size=(num_verts,)).to(torch.int64)
-        for i,v in enumerate(verts):
-            verts_index[i] = v["index"] 
+        for i, v in enumerate(verts):
+            verts_index[i] = v["index"]
             verts_pos[i] = torch.tensor(v["pos"])
         out_points.append(torch.zeros_like(verts_pos))
         out_points[t_index][verts_index] = verts_pos
@@ -98,7 +98,7 @@ class SubjectLoader(torch.utils.data.Dataset):
         "basic_sphere_2",
         "world_deform",
         "world_deform_v2",
-        "brick"
+        "brick",
     ]
 
     WIDTH, HEIGHT = 800, 800
@@ -136,7 +136,11 @@ class SubjectLoader(torch.utils.data.Dataset):
             self.focal,
             self.timestamps,
         ) = _load_renderings(json_data, data_dir)
-        (self.points_time, self.points_data) = load_verts(json_data) if (json_data.get("vertices") != None) else (None, None)
+        (self.points_time, self.points_data) = (
+            load_verts(json_data)
+            if (json_data.get("vertices") != None)
+            else (torch.tensor([]), torch.tensor([]))
+        )
         self.images = torch.from_numpy(self.images).to(torch.uint8)
         self.camtoworlds = torch.from_numpy(self.camtoworlds).to(torch.float32)
         self.timestamps = torch.from_numpy(self.timestamps).to(torch.float32)[:, None]
