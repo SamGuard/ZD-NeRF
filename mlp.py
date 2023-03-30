@@ -17,7 +17,7 @@ from torch.autograd.functional import jacobian
 from functorch import vmap, jacrev, make_functional
 
 from torchdiffeq import odeint_adjoint as torchdiffeq_odeint
-from libs.torchdyn.torchdyn.numerics import odeint_mshooting
+#from libs.torchdyn.torchdyn.numerics import odeint_mshooting
 
 
 class MLP(nn.Module):
@@ -442,7 +442,7 @@ class ODEBlock_MS(nn.Module):
         """
         print(t)
         print(x.shape   )
-        warped = odeint_mshooting(f=self.odefunc, x=x, t_span=t, solver='mszero', fine_steps=3, maxiter=4)
+        #warped = odeint_mshooting(f=self.odefunc, x=x, t_span=t, solver='mszero', fine_steps=3, maxiter=4)
         return warped
         
 
