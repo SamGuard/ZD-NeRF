@@ -259,7 +259,7 @@ class TimeNeRFRadianceField(nn.Module):
         super().__init__()
         self.mlp = NerfMLP(
             input_dim=4,
-            condition_dim=0,
+            condition_dim=3,
             net_depth=net_depth,
             net_width=net_width,
             skip_layer=skip_layer,
@@ -281,9 +281,9 @@ class TimeNeRFRadianceField(nn.Module):
         sigma = self.mlp.query_density(x)
         return F.relu(sigma)
 
-    def forward(self, t, x):
+    def forward(self, t, x, condition=None):
         x = self.join_inputs(t, x)
-        rgb, sigma = self.mlp(x)
+        rgb, sigma = self.mlp(x, condition)
         return torch.sigmoid(rgb), F.relu(sigma)
 
 
@@ -443,7 +443,7 @@ class ODEBlock_MS(nn.Module):
         print(t)
         print(x.shape   )
         #warped = odeint_mshooting(f=self.odefunc, x=x, t_span=t, solver='mszero', fine_steps=3, maxiter=4)
-        return warped
+        #return warped
         
 
 
