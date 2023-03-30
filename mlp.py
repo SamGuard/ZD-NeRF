@@ -6,7 +6,7 @@ import functools
 import math
 import copy
 
-from typing import Callable, Optional
+from typing import *
 import time
 
 import torch
@@ -17,7 +17,8 @@ from torch.autograd.functional import jacobian
 from functorch import vmap, jacrev, make_functional
 
 from torchdiffeq import odeint_adjoint as torchdiffeq_odeint
-#from libs.torchdyn.torchdyn.numerics import odeint_mshooting
+
+# from libs.torchdyn.torchdyn.numerics import odeint_mshooting
 
 
 class MLP(nn.Module):
@@ -164,8 +165,6 @@ class NerfMLP(nn.Module):
             x = torch.cat([bottleneck, condition], dim=-1)
         raw_rgb = self.rgb_layer(x)
         return raw_rgb, raw_sigma
-    
-
 
 
 class SinusoidalEncoder(nn.Module):
@@ -246,7 +245,6 @@ class VanillaNeRFRadianceField(nn.Module):
         return torch.sigmoid(rgb), F.relu(sigma)
 
 
-
 class TimeNeRFRadianceField(nn.Module):
     def __init__(
         self,
@@ -283,6 +281,7 @@ class TimeNeRFRadianceField(nn.Module):
 
     def forward(self, t, x, condition=None):
         x = self.join_inputs(t, x)
+        print(x)
         rgb, sigma = self.mlp(x, condition)
         return torch.sigmoid(rgb), F.relu(sigma)
 
@@ -406,14 +405,12 @@ class NeuralField(nn.Module):
         return self.layers[-1](x)
 
 
-class ODEBlock_torchdiffeq(nn.Module):
+class ODEBlock_Backward(nn.Module):
     def __init__(self, odefunc):
         super().__init__()
         self.odefunc = odefunc
 
-
     def forward(self, t: torch.Tensor, x: torch.Tensor):
-        
         time_steps, args = torch.unique(t, sorted=True, return_inverse=True)
         args: torch.Tensor
         time_steps: torch.Tensor
@@ -421,8 +418,9 @@ class ODEBlock_torchdiffeq(nn.Module):
         if len(time_steps) == 1 and time_steps[0] == 0.0:
             return x
 
-        for i,_t in enumerate(time_steps):
-            if(_t == 0.0): continue
+        for i, _t in enumerate(time_steps):
+            if _t == 0.0:
+                continue
             x_index = (args == i).nonzero().squeeze(dim=1)
             t_tensor = torch.tensor([_t, 0.0], device=x.device)
             warped = torchdiffeq_odeint(self.odefunc, x[x_index], t_tensor)
@@ -430,22 +428,19 @@ class ODEBlock_torchdiffeq(nn.Module):
         return x
 
 
-class ODEBlock_MS(nn.Module):
+class ODEBlock_Forward(nn.Module):
     def __init__(self, odefunc):
         super().__init__()
         self.odefunc = odefunc
 
-    def forward(self, t: torch.Tensor, x: torch.Tensor):
+    def forward(self, start_t: torch.Tensor, end_t: torch.tensor, x: torch.Tensor):
         """
-        All points in x will be integrated at all times in t and uses
-        multiple shooting
+        Integrates all values in x from start_t to end_t using odefunc
         """
-        print(t)
-        print(x.shape   )
-        #warped = odeint_mshooting(f=self.odefunc, x=x, t_span=t, solver='mszero', fine_steps=3, maxiter=4)
-        #return warped
-        
-
+        warped = torchdiffeq_odeint(
+            func=self.odefunc, y0=x, t=torch.tensor([start_t, end_t])
+        )
+        return warped
 
     """ 
     Old code, does not work if there are more than 2 time stamps (during training).
@@ -488,7 +483,6 @@ class ODEBlock_MS(nn.Module):
         return out"""
 
 
-
 class DNeRFRadianceField(nn.Module):
     def __init__(self) -> None:
         super().__init__()
@@ -525,19 +519,21 @@ class DNeRFRadianceField(nn.Module):
         )
         return self.nerf(x, condition=condition)
 
+
 NeuralNet = nn.Sequential(
-                    nn.Linear(4, 32),
-                    nn.Tanh(),
-                    nn.Linear(32, 32),
-                    nn.Tanh(),
-                    nn.Linear(32, 32),
-                    nn.Tanh(),
-                    nn.Linear(32, 32),
-                    nn.Tanh(),
-                    nn.Linear(32, 32),
-                    nn.Tanh(),
-                    nn.Linear(32, 3),
-                )
+    nn.Linear(4, 32),
+    nn.Tanh(),
+    nn.Linear(32, 32),
+    nn.Tanh(),
+    nn.Linear(32, 32),
+    nn.Tanh(),
+    nn.Linear(32, 32),
+    nn.Tanh(),
+    nn.Linear(32, 32),
+    nn.Tanh(),
+    nn.Linear(32, 3),
+)
+
 
 class ZD_NeRFRadianceField(nn.Module):
     def __init__(
@@ -546,7 +542,7 @@ class ZD_NeRFRadianceField(nn.Module):
         super().__init__()
         # self.warp = ODEBlock_torchdiffeq(NeuralField(4, 3, 32, 6))
         # self.warp = ODEBlock_torchdiffeq(CurlField(NeuralNet))
-        self.warp = ODEBlock_torchdiffeq(DivergenceFreeNeuralField(3, 1, 16, 6))
+        self.warp = ODEBlock_Forward(DivergenceFreeNeuralField(3, 1, 16, 6))
         self.nerf = TimeNeRFRadianceField()
 
     def query_opacity(self, x, timestamps, step_size):
@@ -559,9 +555,22 @@ class ZD_NeRFRadianceField(nn.Module):
         return opacity
 
     def query_density(self, t, x):
-        #x = self.warp(t.flatten(), x)
+        # x = self.warp(t.flatten(), x)
         return self.nerf.query_density(t, x)
-    
+
     def forward(self, x, t, condition=None):
         out = self.nerf(t, x, condition=condition)
         return out
+
+    def enforce(
+        self, x: torch.Tensor, dirs: torch.Tensor, t_diff=0.1
+    ) -> Tuple(torch.Tensor, torch.Tensor):
+        t_start = torch.rand(1, device=x.device)[0]
+        t_end = t_start + torch.rand(1, device=x.device)[0] * t_diff * 2 - t_diff
+
+        init_rgb = self.forward(x, t_start, dirs)  # RGB at the starting point
+        x_flow = self.warp(t_start, t_end, x)  # Warp point to new location
+        end_rgb = self.forward(
+            x_flow, t_end, dirs
+        )  # Sample what the nerf thinks the colour should be here
+        return init_rgb, end_rgb

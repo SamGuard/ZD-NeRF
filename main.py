@@ -15,7 +15,7 @@ import torch.nn.functional as F
 import tqdm
 from datasets.dnerf_synthetic import SubjectLoader
 from mlp import ZD_NeRFRadianceField
-from utils import render_image, set_random_seed
+from utils import render_image, set_random_seed, enforce_structure
 from flow_trainer import train_flow_field
 
 from nerfacc import ContractionType, OccupancyGrid
@@ -58,7 +58,7 @@ if __name__ == "__main__":
             "basic_sphere_2",
             "world_deform",
             "world_deform_v2",
-            "brick"
+            "brick",
         ],
         help="which scene to use",
     )
@@ -84,7 +84,7 @@ if __name__ == "__main__":
     parser.add_argument("--model", type=str, default="")
     parser.add_argument("--samples", type=int, default=1024)
     parser.add_argument("--train_in_order", type=bool, default=False)
-    parser.add_argument("--ray_batch_size", type=int, default=1<<16)
+    parser.add_argument("--ray_batch_size", type=int, default=1 << 16)
     args = parser.parse_args()
 
     render_n_samples = args.samples
@@ -179,7 +179,7 @@ if __name__ == "__main__":
 
                 # if train in order then train on images at t=0.0 then proceed to train on
                 # the rest of the dataset
-                # data["timestamps"] is a single number if train in order is true, 
+                # data["timestamps"] is a single number if train in order is true,
                 # Otherwise its a tensor
                 if train_in_order:
                     data = (
@@ -189,19 +189,23 @@ if __name__ == "__main__":
                     )
                 else:
                     data = train_dataset[int(random.random() * len(train_dataset))]
-                
-                # TEMPORARILY DISABLED, SWITCH BACK AFTER CHANGE
-                if(step == mode_switch_step and False):
-                    train_flow_field(radiance_field.warp, train_dataset.points_time, train_dataset.points_data, 500)
 
+                # TEMPORARILY DISABLED, SWITCH BACK AFTER CHANGE
+                if step == mode_switch_step and False:
+                    train_flow_field(
+                        radiance_field.warp,
+                        train_dataset.points_time,
+                        train_dataset.points_data,
+                        500,
+                    )
 
                 render_bkgd = data["color_bkgd"]
                 rays = data["rays"]
                 pixels = data["pixels"]
                 timestamps = (
-                        torch.zeros(size=(pixels.shape[0], 1), device="cuda:0")
-                        + data["timestamps"]
-                    )
+                    torch.zeros(size=(pixels.shape[0], 1), device="cuda:0")
+                    + data["timestamps"]
+                )
 
                 # update occupancy grid
                 occupancy_grid.every_n_step(
@@ -226,6 +230,9 @@ if __name__ == "__main__":
                     alpha_thre=0.01 if step > 1000 else 0.00,
                     # dnerf options
                     timestamps=timestamps,
+                )
+                start_keypoints, end_keypoints = enforce_structure(
+                    radiance_field, scene_aabb, 1024
                 )
                 if n_rendering_samples == 0:
                     continue
@@ -256,8 +263,9 @@ if __name__ == "__main__":
                         exit(-1)
 
                 # compute loss
-                loss = F.smooth_l1_loss(rgb[alive_ray_mask], pixels[alive_ray_mask])
-
+                loss_nerf = F.smooth_l1_loss(rgb[alive_ray_mask], pixels[alive_ray_mask])
+                loss_nerf_flow = F.smooth_l1_loss(start_keypoints, end_keypoints)
+                loss = loss_nerf + loss_nerf_flow
                 optimizer.zero_grad()
                 # do not unscale it because we are using Adam.
                 grad_scaler.scale(loss).backward()

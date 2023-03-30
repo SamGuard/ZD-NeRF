@@ -3,7 +3,7 @@ Copyright (c) 2022 Ruilong Li, UC Berkeley.
 """
 
 import random
-from typing import Optional
+from typing import *
 
 import numpy as np
 import torch
@@ -41,9 +41,7 @@ def render_image(
     if len(rays_shape) == 3:
         height, width, _ = rays_shape
         num_rays = height * width
-        rays = namedtuple_map(
-            lambda r: r.reshape([num_rays] + list(r.shape[2:])), rays
-        )
+        rays = namedtuple_map(lambda r: r.reshape([num_rays] + list(r.shape[2:])), rays)
     else:
         num_rays, _ = rays_shape
 
@@ -78,11 +76,7 @@ def render_image(
         return radiance_field(positions, t_dirs)
 
     results = []
-    chunk = (
-        torch.iinfo(torch.int32).max
-        if radiance_field.training
-        else test_chunk_size
-    )
+    chunk = torch.iinfo(torch.int32).max if radiance_field.training else test_chunk_size
 
     for i in range(0, num_rays, chunk):
         chunk_rays = namedtuple_map(lambda r: r[i : i + chunk], rays)
@@ -99,7 +93,7 @@ def render_image(
             cone_angle=cone_angle,
             alpha_thre=alpha_thre,
         )
-        if(t_starts.shape[0] > 0):
+        if t_starts.shape[0] > 0:
             rgb, opacity, depth = rendering(
                 t_starts=t_starts,
                 t_ends=t_ends,
@@ -108,13 +102,15 @@ def render_image(
                 ray_indices=packed_info,
                 render_bkgd=render_bkgd,
             )
-            #print("SHAPES", rgb.shape, opacity.shape, depth.shape, len(t_starts))
+            # print("SHAPES", rgb.shape, opacity.shape, depth.shape, len(t_starts))
             chunk_results = [rgb, opacity, depth, len(t_starts)]
         else:
             s = len(chunk_rays.origins)
-            chunk_results = [torch.zeros(size=(s,3),device="cuda:0") + 1.0, 
-            torch.zeros(size=(s,1),device="cuda:0") + 1.0, 
-            torch.zeros(size=(s,1),device="cuda:0") + 1.0, 0
+            chunk_results = [
+                torch.zeros(size=(s, 3), device="cuda:0") + 1.0,
+                torch.zeros(size=(s, 1), device="cuda:0") + 1.0,
+                torch.zeros(size=(s, 1), device="cuda:0") + 1.0,
+                0,
             ]
         results.append(chunk_results)
     colors, opacities, depths, n_rendering_samples = [
@@ -127,3 +123,21 @@ def render_image(
         depths.view((*rays_shape[:-1], -1)),
         sum(n_rendering_samples),
     )
+
+
+def enforce_structure(
+    radiance_field: torch.nn.Module, scene_aabb: torch.Tensor, num_samples: int, DEVICE="cuda:0"
+) -> Tuple(torch.Tensor, torch.Tensor):
+    """
+    Uses the flow field to enforce structure by using the flowfield 
+    to predict where points will move to and sample those points and 
+    compare to what the TNerf says
+    """
+    sizes = torch.abs((scene_aabb[3:] - scene_aabb[:3]))
+    x = torch.rand(size=(num_samples, 3), device=DEVICE) * sizes + scene_aabb[:3]
+    dirs = torch.rand(size=(num_samples, 3), device=DEVICE) * 2.0 - 1.0
+    mags = torch.sqrt(torch.sum(dirs ** 2, dim=1))
+    dirs /= torch.stack((mags, mags, mags), dim=1)
+    
+    return radiance_field.enforce(x, dirs, t_diff=0.1)
+
