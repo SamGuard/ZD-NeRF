@@ -568,9 +568,16 @@ class ZD_NeRFRadianceField(nn.Module):
         t_start = torch.rand(1, device=x.device)[0]
         t_end = t_start + torch.rand(1, device=x.device)[0] * t_diff * 2 - t_diff
 
-        init_rgb = self.forward(x, t_start, dirs)  # RGB at the starting point
+        t_start_expanded = torch.full(
+            size=(x.shape[0], 1), fill_value=t_start, device=x.device
+        )
+        t_end_expanded = torch.full(
+            size=(x.shape[0], 1), fill_value=t_end, device=x.device
+        )
+
+        init_rgb = self.forward(x, t_start_expanded, dirs)  # RGB at the starting point
         x_flow = self.warp(t_start, t_end, x)  # Warp point to new location
         end_rgb = self.forward(
-            x_flow, t_end, dirs
+            x_flow, t_end_expanded, dirs
         )  # Sample what the nerf thinks the colour should be here
         return init_rgb, end_rgb
