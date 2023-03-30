@@ -438,7 +438,7 @@ class ODEBlock_Forward(nn.Module):
         Integrates all values in x from start_t to end_t using odefunc
         """
         warped = torchdiffeq_odeint(
-            func=self.odefunc, y0=x, t=torch.tensor([start_t, end_t])
+            func=self.odefunc, y0=x, t=torch.tensor([start_t, end_t], device=x.device)
         )
         return warped[1]
 
@@ -575,9 +575,9 @@ class ZD_NeRFRadianceField(nn.Module):
             size=(x.shape[0], 1), fill_value=t_end, device=x.device
         )
 
-        init_rgb = self.forward(x, t_start_expanded, dirs)  # RGB at the starting point
+        init_rgb, _ = self.forward(x, t_start_expanded, dirs)  # RGB at the starting point
         x_flow = self.warp(t_start, t_end, x)  # Warp point to new location
-        end_rgb = self.forward(
+        end_rgb, _ = self.forward(
             x_flow, t_end_expanded, dirs
         )  # Sample what the nerf thinks the colour should be here
         return init_rgb, end_rgb
