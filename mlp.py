@@ -17,6 +17,7 @@ from torch.autograd.functional import jacobian
 from functorch import vmap, jacrev, make_functional
 
 from torchdiffeq import odeint_adjoint as torchdiffeq_odeint
+from libs.torchdyn.torchdyn.numerics import odeint_mshooting
 
 
 class MLP(nn.Module):
@@ -163,6 +164,127 @@ class NerfMLP(nn.Module):
             x = torch.cat([bottleneck, condition], dim=-1)
         raw_rgb = self.rgb_layer(x)
         return raw_rgb, raw_sigma
+    
+
+
+
+class SinusoidalEncoder(nn.Module):
+    """Sinusoidal Positional Encoder used in Nerf."""
+
+    def __init__(self, x_dim, min_deg, max_deg, use_identity: bool = True):
+        super().__init__()
+        self.x_dim = x_dim
+        self.min_deg = min_deg
+        self.max_deg = max_deg
+        self.use_identity = use_identity
+        self.register_buffer(
+            "scales", torch.tensor([2**i for i in range(min_deg, max_deg)])
+        )
+
+    @property
+    def latent_dim(self) -> int:
+        return (int(self.use_identity) + (self.max_deg - self.min_deg) * 2) * self.x_dim
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Args:
+            x: [..., x_dim]
+        Returns:
+            latent: [..., latent_dim]
+        """
+        if self.max_deg == self.min_deg:
+            return x
+        xb = torch.reshape(
+            (x[Ellipsis, None, :] * self.scales[:, None]),
+            list(x.shape[:-1]) + [(self.max_deg - self.min_deg) * self.x_dim],
+        )
+        latent = torch.sin(torch.cat([xb, xb + 0.5 * math.pi], dim=-1))
+        if self.use_identity:
+            latent = torch.cat([x] + [latent], dim=-1)
+        return latent
+
+
+class VanillaNeRFRadianceField(nn.Module):
+    def __init__(
+        self,
+        net_depth: int = 8,  # The depth of the MLP.
+        net_width: int = 256,  # The width of the MLP.
+        skip_layer: int = 4,  # The layer to add skip layers to.
+        net_depth_condition: int = 1,  # The depth of the second part of MLP.
+        net_width_condition: int = 128,  # The width of the second part of MLP.
+    ) -> None:
+        super().__init__()
+        self.posi_encoder = SinusoidalEncoder(3, 0, 10, True)
+        self.view_encoder = SinusoidalEncoder(3, 0, 4, True)
+        self.mlp = NerfMLP(
+            input_dim=self.posi_encoder.latent_dim,
+            condition_dim=self.view_encoder.latent_dim,
+            net_depth=net_depth,
+            net_width=net_width,
+            skip_layer=skip_layer,
+            net_depth_condition=net_depth_condition,
+            net_width_condition=net_width_condition,
+        )
+
+    def query_opacity(self, x, step_size):
+        density = self.query_density(x)
+        # if the density is small enough those two are the same.
+        # opacity = 1.0 - torch.exp(-density * step_size)
+        opacity = density * step_size
+        return opacity
+
+    def query_density(self, x):
+        x = self.posi_encoder(x)
+        sigma = self.mlp.query_density(x)
+        return F.relu(sigma)
+
+    def forward(self, x, condition=None):
+        x = self.posi_encoder(x)
+        if condition is not None:
+            condition = self.view_encoder(condition)
+        rgb, sigma = self.mlp(x, condition=condition)
+        return torch.sigmoid(rgb), F.relu(sigma)
+
+
+
+class TimeNeRFRadianceField(nn.Module):
+    def __init__(
+        self,
+        net_depth: int = 8,  # The depth of the MLP.
+        net_width: int = 256,  # The width of the MLP.
+        skip_layer: int = 4,  # The layer to add skip layers to.
+        net_depth_condition: int = 1,  # The depth of the second part of MLP.
+        net_width_condition: int = 128,  # The width of the second part of MLP.
+    ) -> None:
+        super().__init__()
+        self.mlp = NerfMLP(
+            input_dim=4,
+            condition_dim=0,
+            net_depth=net_depth,
+            net_width=net_width,
+            skip_layer=skip_layer,
+        )
+
+    def join_inputs(self, t, x):
+        return torch.cat((t, x), dim=1)
+
+    def query_opacity(self, t, x, step_size):
+        x = self.join_inputs(t, x)
+        density = self.query_density(x)
+        # if the density is small enough those two are the same.
+        # opacity = 1.0 - torch.exp(-density * step_size)
+        opacity = density * step_size
+        return opacity
+
+    def query_density(self, t, x):
+        x = self.join_inputs(t, x)
+        sigma = self.mlp.query_density(x)
+        return F.relu(sigma)
+
+    def forward(self, t, x):
+        x = self.join_inputs(t, x)
+        rgb, sigma = self.mlp(x)
+        return torch.sigmoid(rgb), F.relu(sigma)
 
 
 class CurlField(nn.Module):
@@ -307,6 +429,24 @@ class ODEBlock_torchdiffeq(nn.Module):
             x[x_index] = warped[-1]
         return x
 
+
+class ODEBlock_MS(nn.Module):
+    def __init__(self, odefunc):
+        super().__init__()
+        self.odefunc = odefunc
+
+    def forward(self, t: torch.Tensor, x: torch.Tensor):
+        """
+        All points in x will be integrated at all times in t and uses
+        multiple shooting
+        """
+        print(t)
+        print(x.shape   )
+        warped = odeint_mshooting(f=self.odefunc, x=x, t_span=t, solver='mszero', fine_steps=3, maxiter=4)
+        return warped
+        
+
+
     """ 
     Old code, does not work if there are more than 2 time stamps (during training).
     For example it will work if there is only data at t=0.0 and t=1.0, but no if
@@ -347,83 +487,6 @@ class ODEBlock_torchdiffeq(nn.Module):
 
         return out"""
 
-
-class SinusoidalEncoder(nn.Module):
-    """Sinusoidal Positional Encoder used in Nerf."""
-
-    def __init__(self, x_dim, min_deg, max_deg, use_identity: bool = True):
-        super().__init__()
-        self.x_dim = x_dim
-        self.min_deg = min_deg
-        self.max_deg = max_deg
-        self.use_identity = use_identity
-        self.register_buffer(
-            "scales", torch.tensor([2**i for i in range(min_deg, max_deg)])
-        )
-
-    @property
-    def latent_dim(self) -> int:
-        return (int(self.use_identity) + (self.max_deg - self.min_deg) * 2) * self.x_dim
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        Args:
-            x: [..., x_dim]
-        Returns:
-            latent: [..., latent_dim]
-        """
-        if self.max_deg == self.min_deg:
-            return x
-        xb = torch.reshape(
-            (x[Ellipsis, None, :] * self.scales[:, None]),
-            list(x.shape[:-1]) + [(self.max_deg - self.min_deg) * self.x_dim],
-        )
-        latent = torch.sin(torch.cat([xb, xb + 0.5 * math.pi], dim=-1))
-        if self.use_identity:
-            latent = torch.cat([x] + [latent], dim=-1)
-        return latent
-
-
-class VanillaNeRFRadianceField(nn.Module):
-    def __init__(
-        self,
-        net_depth: int = 8,  # The depth of the MLP.
-        net_width: int = 256,  # The width of the MLP.
-        skip_layer: int = 4,  # The layer to add skip layers to.
-        net_depth_condition: int = 1,  # The depth of the second part of MLP.
-        net_width_condition: int = 128,  # The width of the second part of MLP.
-    ) -> None:
-        super().__init__()
-        self.posi_encoder = SinusoidalEncoder(3, 0, 10, True)
-        self.view_encoder = SinusoidalEncoder(3, 0, 4, True)
-        self.mlp = NerfMLP(
-            input_dim=self.posi_encoder.latent_dim,
-            condition_dim=self.view_encoder.latent_dim,
-            net_depth=net_depth,
-            net_width=net_width,
-            skip_layer=skip_layer,
-            net_depth_condition=net_depth_condition,
-            net_width_condition=net_width_condition,
-        )
-
-    def query_opacity(self, x, step_size):
-        density = self.query_density(x)
-        # if the density is small enough those two are the same.
-        # opacity = 1.0 - torch.exp(-density * step_size)
-        opacity = density * step_size
-        return opacity
-
-    def query_density(self, x):
-        x = self.posi_encoder(x)
-        sigma = self.mlp.query_density(x)
-        return F.relu(sigma)
-
-    def forward(self, x, condition=None):
-        x = self.posi_encoder(x)
-        if condition is not None:
-            condition = self.view_encoder(condition)
-        rgb, sigma = self.mlp(x, condition=condition)
-        return torch.sigmoid(rgb), F.relu(sigma)
 
 
 class DNeRFRadianceField(nn.Module):
@@ -484,29 +547,21 @@ class ZD_NeRFRadianceField(nn.Module):
         # self.warp = ODEBlock_torchdiffeq(NeuralField(4, 3, 32, 6))
         # self.warp = ODEBlock_torchdiffeq(CurlField(NeuralNet))
         self.warp = ODEBlock_torchdiffeq(DivergenceFreeNeuralField(3, 1, 16, 6))
-
-        self.nerf = VanillaNeRFRadianceField()
-        self.frozen_nerf = None
+        self.nerf = TimeNeRFRadianceField()
 
     def query_opacity(self, x, timestamps, step_size):
         idxs = torch.randint(0, len(timestamps), (x.shape[0],), device=x.device)
         t = timestamps[idxs]
-        density = self.query_density(x, t)
+        density = self.query_density(t, x)
         # if the density is small enough those two are the same.
         # opacity = 1.0 - torch.exp(-density * step_size)
         opacity = density * step_size
         return opacity
 
-    def query_density(self, x, t):
-        x = self.warp(t.flatten(), x)
-        return self.nerf.query_density(x)
-
-    def freeze_nerf(self):
-        self.frozen_nerf = copy.deepcopy(self.nerf)
-
+    def query_density(self, t, x):
+        #x = self.warp(t.flatten(), x)
+        return self.nerf.query_density(t, x)
+    
     def forward(self, x, t, condition=None):
-        if self.frozen_nerf != None:
-            self.nerf = copy.deepcopy(self.frozen_nerf)
-        x = self.warp(t.flatten(), x)
-        out = self.nerf(x, condition=condition)
+        out = self.nerf(t, x, condition=condition)
         return out

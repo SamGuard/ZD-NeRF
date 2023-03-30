@@ -173,7 +173,6 @@ if __name__ == "__main__":
     mode_switch_step = 10000
     num_data = len(train_dataset)
     if not args.just_render:
-        # Warm up the flow field
         for epoch in range(10000000):
             for i in range(len(train_dataset)):
                 radiance_field.train()
@@ -191,7 +190,8 @@ if __name__ == "__main__":
                 else:
                     data = train_dataset[int(random.random() * len(train_dataset))]
                 
-                if(step == mode_switch_step):
+                # TEMPORARILY DISABLED, SWITCH BACK AFTER CHANGE
+                if(step == mode_switch_step and False):
                     train_flow_field(radiance_field.warp, train_dataset.points_time, train_dataset.points_data, 500)
 
 
