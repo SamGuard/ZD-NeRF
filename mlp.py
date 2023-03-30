@@ -440,7 +440,7 @@ class ODEBlock_Forward(nn.Module):
         warped = torchdiffeq_odeint(
             func=self.odefunc, y0=x, t=torch.tensor([start_t, end_t])
         )
-        return warped
+        return warped[1]
 
     """ 
     Old code, does not work if there are more than 2 time stamps (during training).
