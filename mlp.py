@@ -281,7 +281,6 @@ class TimeNeRFRadianceField(nn.Module):
 
     def forward(self, t, x, condition=None):
         x = self.join_inputs(t, x)
-        print(x)
         rgb, sigma = self.mlp(x, condition)
         return torch.sigmoid(rgb), F.relu(sigma)
 
