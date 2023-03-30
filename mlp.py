@@ -564,7 +564,7 @@ class ZD_NeRFRadianceField(nn.Module):
 
     def enforce(
         self, x: torch.Tensor, dirs: torch.Tensor, t_diff=0.1
-    ) -> Tuple(torch.Tensor, torch.Tensor):
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         t_start = torch.rand(1, device=x.device)[0]
         t_end = t_start + torch.rand(1, device=x.device)[0] * t_diff * 2 - t_diff
 
