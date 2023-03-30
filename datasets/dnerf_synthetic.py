@@ -27,7 +27,7 @@ def get_abs_path(root_fp: str, subject_id: str):
     return os.path.join(root_fp, subject_id)
 
 
-def load_json_file(data_dir: str, split: str):
+def load_json_file(data_dir: str, split: str) -> Dict:
     with open(os.path.join(data_dir, "transforms_{}.json".format(split)), "r") as fp:
         return json.load(fp)
 
@@ -136,7 +136,7 @@ class SubjectLoader(torch.utils.data.Dataset):
             self.focal,
             self.timestamps,
         ) = _load_renderings(json_data, data_dir)
-        (self.points_time, self.points_data) = load_verts(json_data) if ("vertices" in json_data) else None
+        (self.points_time, self.points_data) = load_verts(json_data) if (json_data.get("vertices") != None) else None
         self.images = torch.from_numpy(self.images).to(torch.uint8)
         self.camtoworlds = torch.from_numpy(self.camtoworlds).to(torch.float32)
         self.timestamps = torch.from_numpy(self.timestamps).to(torch.float32)[:, None]
