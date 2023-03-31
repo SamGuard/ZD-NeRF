@@ -362,7 +362,8 @@ if __name__ == "__main__":
                 occupancy_grid._update(
                     step=step,
                     occ_eval_fn=lambda x: radiance_field.query_opacity(
-                        x, timestamps, render_step_size
+                        #x, timestamps, render_step_size
+                        x, render_step_size
                     ),
                 )
 
@@ -377,7 +378,8 @@ if __name__ == "__main__":
                     occupancy_grid._update(
                         step=step,
                         occ_eval_fn=lambda x: radiance_field.query_opacity(
-                            x, timestamps, render_step_size
+                            #x, timestamps, render_step_size
+                            x, render_step_size
                         ),
                     )
                     """
