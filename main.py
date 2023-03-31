@@ -14,7 +14,7 @@ import torch
 import torch.nn.functional as F
 import tqdm
 from datasets.dnerf_synthetic import SubjectLoader
-from mlp import ZD_NeRFRadianceField,VanillaNeRFRadianceField
+from mlp import ZD_NeRFRadianceField
 from utils import render_image, set_random_seed, enforce_structure
 from flow_trainer import train_flow_field
 
@@ -22,7 +22,7 @@ from nerfacc import ContractionType, OccupancyGrid
 
 
 def new_model():
-    radiance_field = VanillaNeRFRadianceField().to(device)#ZD_NeRFRadianceField().to(device)
+    radiance_field = ZD_NeRFRadianceField().to(device)
     optimizer = torch.optim.Adam(radiance_field.parameters(), lr=5e-4)
     return radiance_field, optimizer
 
@@ -211,10 +211,11 @@ if __name__ == "__main__":
                 occupancy_grid.every_n_step(
                     step=step,
                     occ_eval_fn=lambda x: radiance_field.query_opacity(
-                        #x, timestamps, render_step_size
-                        x, render_step_size
+                        x, timestamps, render_step_size
                     ),
                 )
+
+                print(timestamps)
 
                 # render
                 rgb, acc, depth, n_rendering_samples = render_image(
@@ -230,7 +231,7 @@ if __name__ == "__main__":
                     cone_angle=args.cone_angle,
                     alpha_thre=0.01 if step > 1000 else 0.00,
                     # dnerf options
-                    #timestamps=timestamps,
+                    timestamps=timestamps,
                 )
                 """start_keypoints, end_keypoints = enforce_structure(
                     radiance_field, scene_aabb, 256
@@ -348,7 +349,7 @@ if __name__ == "__main__":
 
                 step += 1
     else:
-        radiance_field = VanillaNeRFRadianceField().to(device)#ZD_NeRFRadianceField().to(device)
+        radiance_field = ZD_NeRFRadianceField().to(device)
         radiance_field.load_state_dict(
             torch.load(os.path.join("/", "mnt", "io", "train_out", args.model), device)
         )
@@ -362,8 +363,7 @@ if __name__ == "__main__":
                 occupancy_grid._update(
                     step=step,
                     occ_eval_fn=lambda x: radiance_field.query_opacity(
-                        #x, timestamps, render_step_size
-                        x, render_step_size
+                        x, timestamps, render_step_size
                     ),
                 )
 
@@ -378,8 +378,7 @@ if __name__ == "__main__":
                     occupancy_grid._update(
                         step=step,
                         occ_eval_fn=lambda x: radiance_field.query_opacity(
-                            #x, timestamps, render_step_size
-                            x, render_step_size
+                            x, timestamps, render_step_size
                         ),
                     )
                     """
@@ -407,7 +406,7 @@ if __name__ == "__main__":
                         # test options
                         test_chunk_size=args.test_chunk_size,
                         # dnerf options
-                        #timestamps=timestamps,
+                        timestamps=timestamps,
                     )
 
                     imageio.imwrite(
