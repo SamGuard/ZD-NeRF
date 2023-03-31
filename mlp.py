@@ -519,21 +519,6 @@ class DNeRFRadianceField(nn.Module):
         return self.nerf(x, condition=condition)
 
 
-NeuralNet = nn.Sequential(
-    nn.Linear(4, 32),
-    nn.Tanh(),
-    nn.Linear(32, 32),
-    nn.Tanh(),
-    nn.Linear(32, 32),
-    nn.Tanh(),
-    nn.Linear(32, 32),
-    nn.Tanh(),
-    nn.Linear(32, 32),
-    nn.Tanh(),
-    nn.Linear(32, 3),
-)
-
-
 class ZD_NeRFRadianceField(nn.Module):
     def __init__(
         self,
