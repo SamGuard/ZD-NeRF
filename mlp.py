@@ -207,7 +207,7 @@ class VanillaNeRFRadianceField(nn.Module):
     def __init__(
         self,
         net_depth: int = 8,  # The depth of the MLP.
-        net_width: int = 512,  # The width of the MLP.
+        net_width: int = 256,  # The width of the MLP.
         skip_layer: int = 4,  # The layer to add skip layers to.
         net_depth_condition: int = 1,  # The depth of the second part of MLP.
         net_width_condition: int = 128,  # The width of the second part of MLP.
@@ -263,24 +263,24 @@ class TimeNeRFRadianceField(nn.Module):
             skip_layer=skip_layer,
         )
 
-    def join_inputs(self, t, x):
-        return torch.cat((t, x), dim=1)
+    def join_inputs(self, x, t):
+        return torch.cat((x, t), dim=1)
 
-    def query_opacity(self, t, x, step_size):
-        x = self.join_inputs(t, x)
+    def query_opacity(self, x, t, step_size):
+        x = self.join_inputs(x, t)
         density = self.query_density(x)
         # if the density is small enough those two are the same.
         # opacity = 1.0 - torch.exp(-density * step_size)
         opacity = density * step_size
         return opacity
 
-    def query_density(self, t, x):
-        x = self.join_inputs(t, x)
+    def query_density(self, x, t):
+        x = self.join_inputs(x, t)
         sigma = self.mlp.query_density(x)
         return F.relu(sigma)
 
-    def forward(self, t, x, condition=None):
-        x = self.join_inputs(t, x)
+    def forward(self, x, t, condition=None):
+        x = self.join_inputs(x, t)
         rgb, sigma = self.mlp(x, condition)
         return torch.sigmoid(rgb), F.relu(sigma)
 
@@ -532,22 +532,22 @@ class ZD_NeRFRadianceField(nn.Module):
     def query_opacity(self, x, timestamps, step_size):
         idxs = torch.randint(0, len(timestamps), (x.shape[0],), device=x.device)
         t = timestamps[idxs]
-        density = self.query_density(t, x)
+        density = self.query_density(x, t)
         # if the density is small enough those two are the same.
         # opacity = 1.0 - torch.exp(-density * step_size)
         opacity = density * step_size
         return opacity
 
-    def query_density(self, t, x):
+    def query_density(self, x, t):
         # x = self.warp(t.flatten(), x)
-        return self.nerf.query_density(t, x)
+        return self.nerf.query_density(x, t)
 
     def forward(self, x, t, condition=None):
-        out = self.nerf(t, x, condition=condition)
+        out = self.nerf(x, t, condition=condition)
         return out
 
     def enforce(
-        self, x: torch.Tensor, dirs: torch.Tensor, t_diff=0.1
+        self, x: torch.Tensor, dirs: torch.Tensor, t_diff=0.01
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         t_start = torch.rand(1, device=x.device)[0]
         t_end = t_start + torch.rand(1, device=x.device)[0] * t_diff * 2 - t_diff
