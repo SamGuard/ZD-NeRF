@@ -264,7 +264,7 @@ class TimeNeRFRadianceField(nn.Module):
         )
 
     def join_inputs(self, x, t):
-        return torch.cat((x, t), dim=1)
+        return torch.cat((x, torch.zeros_like(t)), dim=1)
 
     def query_opacity(self, x, t, step_size):
         x = self.join_inputs(x, t)
