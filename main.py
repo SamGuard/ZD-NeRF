@@ -183,7 +183,7 @@ if __name__ == "__main__":
                 # Otherwise its a tensor
                 if train_in_order:
                     data = (
-                        train_dataset[int(14 * random.random())]
+                        train_dataset[int(0.5 * len(train_dataset) * random.random())]
                         if step <= mode_switch_step
                         else train_dataset[int(random.random() * len(train_dataset))]
                     )
@@ -232,7 +232,7 @@ if __name__ == "__main__":
                     timestamps=timestamps,
                 )
                 """start_keypoints, end_keypoints = enforce_structure(
-                    radiance_field, scene_aabb, 1024
+                    radiance_field, scene_aabb, 256
                 )"""
                 if n_rendering_samples == 0:
                     continue
