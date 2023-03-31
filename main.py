@@ -14,7 +14,7 @@ import torch
 import torch.nn.functional as F
 import tqdm
 from datasets.dnerf_synthetic import SubjectLoader
-from mlp import ZD_NeRFRadianceField
+from mlp import ZD_NeRFRadianceField,VanillaNeRFRadianceField
 from utils import render_image, set_random_seed, enforce_structure
 from flow_trainer import train_flow_field
 
@@ -22,7 +22,7 @@ from nerfacc import ContractionType, OccupancyGrid
 
 
 def new_model():
-    radiance_field = ZD_NeRFRadianceField().to(device)
+    radiance_field = VanillaNeRFRadianceField.to(device)#ZD_NeRFRadianceField().to(device)
     optimizer = torch.optim.Adam(radiance_field.parameters(), lr=5e-4)
     return radiance_field, optimizer
 
@@ -229,7 +229,7 @@ if __name__ == "__main__":
                     cone_angle=args.cone_angle,
                     alpha_thre=0.01 if step > 1000 else 0.00,
                     # dnerf options
-                    timestamps=timestamps,
+                    #timestamps=timestamps,
                 )
                 """start_keypoints, end_keypoints = enforce_structure(
                     radiance_field, scene_aabb, 256
