@@ -271,9 +271,7 @@ class TimeNeRFRadianceField(nn.Module):
         return torch.cat((x, t), dim=1)
 
     def query_opacity(self, x, t, step_size):
-        print("How is this working?")
-        x = self.join_inputs(x, t)
-        density = self.query_density(x)
+        density = self.query_density(x, t)
         # if the density is small enough those two are the same.
         # opacity = 1.0 - torch.exp(-density * step_size)
         opacity = density * step_size

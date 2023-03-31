@@ -231,9 +231,9 @@ if __name__ == "__main__":
                     # dnerf options
                     timestamps=timestamps,
                 )
-                """start_keypoints, end_keypoints = enforce_structure(
+                start_keypoints, end_keypoints = enforce_structure(
                     radiance_field, scene_aabb, 256
-                )"""
+                )
                 if n_rendering_samples == 0:
                     continue
 
@@ -242,7 +242,7 @@ if __name__ == "__main__":
                 num_rays = int(
                     num_rays * (target_sample_batch_size / float(n_rendering_samples))
                 )
-                # TEMPORARY FIX, CHANGE 40000 TO arg
+                # TEMPORARY FIX, CHANGE min/max rays TO arg
                 num_rays = max(min(40000, num_rays), 1000)
                 train_dataset.update_num_rays(num_rays)
                 alive_ray_mask = acc.squeeze(-1) > 0
@@ -264,8 +264,8 @@ if __name__ == "__main__":
 
                 # compute loss
                 loss_nerf = F.smooth_l1_loss(rgb[alive_ray_mask], pixels[alive_ray_mask])
-                #loss_nerf_flow = F.smooth_l1_loss(start_keypoints, end_keypoints)
-                loss = loss_nerf #+ loss_nerf_flow
+                loss_nerf_flow = F.smooth_l1_loss(start_keypoints, end_keypoints)
+                loss = loss_nerf + loss_nerf_flow
                 optimizer.zero_grad()
                 # do not unscale it because we are using Adam.
                 grad_scaler.scale(loss).backward()
