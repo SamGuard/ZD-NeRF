@@ -255,18 +255,23 @@ class TimeNeRFRadianceField(nn.Module):
         net_width_condition: int = 128,  # The width of the second part of MLP.
     ) -> None:
         super().__init__()
+        self.posi_encoder = SinusoidalEncoder(4, 0, 10, True)
+        self.view_encoder = SinusoidalEncoder(3, 0, 4, True)
         self.mlp = NerfMLP(
-            input_dim=4,
-            condition_dim=3,
+            input_dim=self.posi_encoder.latent_dim,
+            condition_dim=self.view_encoder.latent_dim,
             net_depth=net_depth,
             net_width=net_width,
             skip_layer=skip_layer,
+            net_depth_condition=net_depth_condition,
+            net_width_condition=net_width_condition,
         )
 
     def join_inputs(self, x, t):
-        return torch.cat((x, torch.zeros_like(t)), dim=1)
+        return torch.cat((x, t), dim=1)
 
     def query_opacity(self, x, t, step_size):
+        print("How is this working?")
         x = self.join_inputs(x, t)
         density = self.query_density(x)
         # if the density is small enough those two are the same.
@@ -276,11 +281,15 @@ class TimeNeRFRadianceField(nn.Module):
 
     def query_density(self, x, t):
         x = self.join_inputs(x, t)
+        x = self.posi_encoder(x)
         sigma = self.mlp.query_density(x)
         return F.relu(sigma)
 
     def forward(self, x, t, condition=None):
         x = self.join_inputs(x, t)
+        x = self.posi_encoder(x)
+        if condition is not None:
+            condition = self.view_encoder(condition)
         rgb, sigma = self.mlp(x, condition)
         return torch.sigmoid(rgb), F.relu(sigma)
 
