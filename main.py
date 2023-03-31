@@ -171,6 +171,7 @@ if __name__ == "__main__":
     attempts = 0
     tic = time.time()
     mode_switch_step = 10000
+    safe_step = 200
     num_data = len(train_dataset)
     if not args.just_render:
         for epoch in range(10000000):
@@ -191,7 +192,7 @@ if __name__ == "__main__":
                     data = train_dataset[int(random.random() * len(train_dataset))]
 
                 # TEMPORARILY DISABLED, SWITCH BACK AFTER CHANGE
-                if step == mode_switch_step and False:
+                if step == safe_step:
                     train_flow_field(
                         radiance_field.warp,
                         train_dataset.points_time,
@@ -231,9 +232,10 @@ if __name__ == "__main__":
                     # dnerf options
                     timestamps=timestamps,
                 )
-                start_keypoints, end_keypoints = enforce_structure(
-                    radiance_field, scene_aabb, 256
-                )
+                if(safe_step >= 200):
+                    start_keypoints, end_keypoints = enforce_structure(
+                        radiance_field, scene_aabb, 256
+                    )
                 if n_rendering_samples == 0:
                     continue
 
@@ -264,7 +266,8 @@ if __name__ == "__main__":
 
                 # compute loss
                 loss_nerf = F.smooth_l1_loss(rgb[alive_ray_mask], pixels[alive_ray_mask])
-                loss_nerf_flow = F.smooth_l1_loss(start_keypoints, end_keypoints)
+
+                loss_nerf_flow = F.smooth_l1_loss(start_keypoints, end_keypoints) if(step >= safe_step) else 0
                 loss = loss_nerf + loss_nerf_flow
                 optimizer.zero_grad()
                 # do not unscale it because we are using Adam.
