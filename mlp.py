@@ -207,7 +207,7 @@ class VanillaNeRFRadianceField(nn.Module):
     def __init__(
         self,
         net_depth: int = 8,  # The depth of the MLP.
-        net_width: int = 256,  # The width of the MLP.
+        net_width: int = 512,  # The width of the MLP.
         skip_layer: int = 4,  # The layer to add skip layers to.
         net_depth_condition: int = 1,  # The depth of the second part of MLP.
         net_width_condition: int = 128,  # The width of the second part of MLP.
