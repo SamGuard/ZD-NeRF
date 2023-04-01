@@ -368,7 +368,7 @@ if __name__ == "__main__":
                     ),
                 )
 
-            for t in map(lambda x: x / num_time, range(num_time)):
+            for t in map(lambda x: x / (num_time-1), range(num_time)):
                 for i in [11]:  # range(len(test_dataset)):
                     data = test_dataset[i]
                     render_bkgd = data["color_bkgd"]
