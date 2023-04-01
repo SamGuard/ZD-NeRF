@@ -357,7 +357,7 @@ if __name__ == "__main__":
 
         radiance_field.eval()
         step = 0
-        num_time = 10
+        num_time = 11
         timestamps = torch.tensor([[0.0]], dtype=torch.float32).to(device)
         with torch.no_grad():
             for i in range(10):
@@ -368,13 +368,13 @@ if __name__ == "__main__":
                     ),
                 )
 
-            for t in map(lambda x: x / num_time, range(num_time)):
+            for t in torch.linspace(0, 1, num_time):
                 for i in [11]:  # range(len(test_dataset)):
                     data = test_dataset[i]
                     render_bkgd = data["color_bkgd"]
                     rays = data["rays"]
                     pixels = data["pixels"]
-                    timestamps[0][0] = t
+                    timestamps[0][0] = float(t)
 
                     occupancy_grid._update(
                         step=step,
