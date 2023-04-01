@@ -368,13 +368,13 @@ if __name__ == "__main__":
                     ),
                 )
 
-            for t in torch.linspace(0, 1, num_time):
+            for t in torch.round(torch.linspace(0, 1, num_time), decimals=3):
                 for i in [11]:  # range(len(test_dataset)):
                     data = test_dataset[i]
                     render_bkgd = data["color_bkgd"]
                     rays = data["rays"]
                     pixels = data["pixels"]
-                    timestamps[0][0] = round(float(t), 3)
+                    timestamps[0][0] = t
 
                     occupancy_grid._update(
                         step=step,
