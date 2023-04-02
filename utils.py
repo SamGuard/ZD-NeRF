@@ -126,17 +126,25 @@ def render_image(
 
 
 def enforce_structure(
-    radiance_field: torch.nn.Module, scene_aabb: torch.Tensor, num_samples: int, max_time_diff=0.01, device="cuda:0"
+    radiance_field: torch.nn.Module,
+    scene_aabb: torch.Tensor,
+    num_samples: int,
+    max_time_diff=0.01,
+    device="cuda:0",
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """
-    Uses the flow field to enforce structure by using the flowfield 
-    to predict where points will move to and sample those points and 
+    Uses the flow field to enforce structure by using the flowfield
+    to predict where points will move to and sample those points and
     compare to what the TNerf says
     """
-    sizes = torch.abs((scene_aabb[3:] - scene_aabb[:3]))
-    x = torch.rand(size=(num_samples, 3), device=device) * sizes + scene_aabb[:3]
-    dirs = torch.rand(size=(num_samples, 3), device=device) * 2.0 - 1.0
-    mags = torch.sqrt(torch.sum(dirs ** 2, dim=1))
-    dirs /= torch.stack((mags, mags, mags), dim=1)
+    aabb_size = torch.abs((scene_aabb[3:] - scene_aabb[:3]))
+    sample_points = (
+        torch.rand(size=(num_samples, 3), device=device) * aabb_size + scene_aabb[:3]
+    )
+    random_dirs = torch.rand(size=(num_samples, 3), device=device) * 2.0 - 1.0
+    direction_magnitude = torch.sqrt(torch.sum(random_dirs**2, dim=1))
+    random_dirs /= torch.stack(
+        (direction_magnitude, direction_magnitude, direction_magnitude), dim=1
+    )
 
-    return radiance_field.enforce(x, dirs, t_diff=max_time_diff)
+    return radiance_field.enforce(sample_points, random_dirs, t_diff=max_time_diff)

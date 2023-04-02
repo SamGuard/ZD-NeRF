@@ -553,7 +553,7 @@ class ZD_NeRFRadianceField(nn.Module):
         out = self.nerf(x, t, condition=condition)
         return out
 
-    def enforce(
+    def flow_field_pred(
         self, x: torch.Tensor, dirs: torch.Tensor, t_diff=0.01
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         t_start = torch.rand(1, device=x.device)[0]
