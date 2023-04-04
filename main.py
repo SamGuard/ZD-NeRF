@@ -171,7 +171,7 @@ if __name__ == "__main__":
     attempts = 0
     tic = time.time()
     mode_switch_step = 10000
-    safe_step = 200
+    safe_step = int(1e16)
     num_data = len(train_dataset)
     if not args.just_render:
         for epoch in range(10000000):
@@ -232,7 +232,7 @@ if __name__ == "__main__":
                     # dnerf options
                     timestamps=timestamps,
                 )
-                if(safe_step >= 200):
+                if(step >= safe_step):
                     start_keypoints, end_keypoints = enforce_structure(
                         radiance_field, scene_aabb, 256
                     )
