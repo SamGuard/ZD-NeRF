@@ -59,6 +59,7 @@ if __name__ == "__main__":
             "world_deform",
             "world_deform_v2",
             "brick",
+            "brick_v2",
         ],
         help="which scene to use",
     )
@@ -140,6 +141,7 @@ if __name__ == "__main__":
         root_fp=data_root_fp,
         split=args.train_split,
         num_rays=target_sample_batch_size // render_n_samples,
+        batch_over_images=False,
     )
     train_dataset.images = train_dataset.images.to(device)
     train_dataset.camtoworlds = train_dataset.camtoworlds.to(device)
@@ -170,7 +172,7 @@ if __name__ == "__main__":
     attempts = 0
     tic = time.time()
     mode_switch_step = 10000
-    safe_step = 200  # int(1e16)
+    flow_field_start_step = 10000  # int(1e16)
     num_data = len(train_dataset)
     if not args.just_render:
         for epoch in range(10000000):
@@ -181,9 +183,12 @@ if __name__ == "__main__":
                 render_bkgd = data["color_bkgd"]
                 rays = data["rays"]
                 pixels = data["pixels"]
-                timestamps = data["timestamps"]
+                timestamps = (
+                    torch.zeros(size=(pixels.shape[0], 1), device="cuda:0")
+                    + data["timestamps"]
+                )
 
-                if step == safe_step:
+                if step == flow_field_start_step:
                     train_flow_field(
                         radiance_field.warp,
                         train_dataset.points_time,
@@ -215,7 +220,7 @@ if __name__ == "__main__":
                     # dnerf options
                     timestamps=timestamps,
                 )
-                if step >= safe_step:
+                if step >= flow_field_start_step:
                     start_keypoints, end_keypoints = enforce_structure(
                         radiance_field=radiance_field,
                         scene_aabb=scene_aabb,
@@ -257,7 +262,7 @@ if __name__ == "__main__":
 
                 loss_nerf_flow = (
                     F.smooth_l1_loss(start_keypoints, end_keypoints)
-                    if (step >= safe_step)
+                    if (step >= flow_field_start_step)
                     else 0
                 )
                 loss = loss_nerf + loss_nerf_flow
