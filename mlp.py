@@ -226,10 +226,8 @@ class VanillaNeRFRadianceField(nn.Module):
         net_width_condition: int = 128,  # The width of the second part of MLP.
     ) -> None:
         super().__init__()
-        #self.posi_encoder = SinusoidalEncoder(3, 0, 10, True)
-        #self.view_encoder = SinusoidalEncoder(3, 0, 4, True)
-        self.posi_encoder = IdentityEncoder(3)
-        self.view_encoder = IdentityEncoder(3)
+        self.posi_encoder = SinusoidalEncoder(3, 0, 10, True)
+        self.view_encoder = SinusoidalEncoder(3, 0, 4, True)
         self.mlp = NerfMLP(
             input_dim=self.posi_encoder.latent_dim,
             condition_dim=self.view_encoder.latent_dim,
@@ -272,6 +270,8 @@ class TimeNeRFRadianceField(nn.Module):
         super().__init__()
         #self.posi_encoder = SinusoidalEncoder(4, 0, 10, True)
         #self.view_encoder = SinusoidalEncoder(3, 0, 4, True)
+        self.posi_encoder = IdentityEncoder(3)
+        self.view_encoder = IdentityEncoder(3)
         self.mlp = NerfMLP(
             input_dim=self.posi_encoder.latent_dim,
             condition_dim=self.view_encoder.latent_dim,
