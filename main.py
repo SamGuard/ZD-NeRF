@@ -140,7 +140,6 @@ if __name__ == "__main__":
         root_fp=data_root_fp,
         split=args.train_split,
         num_rays=target_sample_batch_size // render_n_samples,
-        batch_over_images=False,
     )
     train_dataset.images = train_dataset.images.to(device)
     train_dataset.camtoworlds = train_dataset.camtoworlds.to(device)
@@ -178,20 +177,12 @@ if __name__ == "__main__":
             for i in range(len(train_dataset)):
                 radiance_field.train()
 
-                # if train in order then train on images at t=0.0 then proceed to train on
-                # the rest of the dataset
-                # data["timestamps"] is a single number if train in order is true,
-                # Otherwise its a tensor
-                if train_in_order:
-                    data = (
-                        train_dataset[int(0.5 * len(train_dataset) * random.random())]
-                        if step <= mode_switch_step
-                        else train_dataset[int(random.random() * len(train_dataset))]
-                    )
-                else:
-                    data = train_dataset[int(random.random() * len(train_dataset))]
+                data = train_dataset[i]
+                render_bkgd = data["color_bkgd"]
+                rays = data["rays"]
+                pixels = data["pixels"]
+                timestamps = data["timestamps"]
 
-                # TEMPORARILY DISABLED, SWITCH BACK AFTER CHANGE
                 if step == safe_step:
                     train_flow_field(
                         radiance_field.warp,
@@ -199,14 +190,6 @@ if __name__ == "__main__":
                         train_dataset.points_data,
                         500,
                     )
-
-                render_bkgd = data["color_bkgd"]
-                rays = data["rays"]
-                pixels = data["pixels"]
-                timestamps = (
-                    torch.zeros(size=(pixels.shape[0], 1), device="cuda:0")
-                    + data["timestamps"]
-                )
 
                 # update occupancy grid
                 occupancy_grid.every_n_step(
@@ -232,7 +215,7 @@ if __name__ == "__main__":
                     # dnerf options
                     timestamps=timestamps,
                 )
-                if(step >= safe_step):
+                if step >= safe_step:
                     start_keypoints, end_keypoints = enforce_structure(
                         radiance_field, scene_aabb, 256
                     )
@@ -265,9 +248,15 @@ if __name__ == "__main__":
                         exit(-1)
 
                 # compute loss
-                loss_nerf = F.smooth_l1_loss(rgb[alive_ray_mask], pixels[alive_ray_mask])
+                loss_nerf = F.smooth_l1_loss(
+                    rgb[alive_ray_mask], pixels[alive_ray_mask]
+                )
 
-                loss_nerf_flow = F.smooth_l1_loss(start_keypoints, end_keypoints) if(step >= safe_step) else 0
+                loss_nerf_flow = (
+                    F.smooth_l1_loss(start_keypoints, end_keypoints)
+                    if (step >= safe_step)
+                    else 0
+                )
                 loss = loss_nerf + loss_nerf_flow
                 optimizer.zero_grad()
                 # do not unscale it because we are using Adam.
@@ -368,7 +357,7 @@ if __name__ == "__main__":
                     ),
                 )
 
-            for t in map(lambda x: x / (num_time-1), range(num_time)):
+            for t in map(lambda x: x / (num_time - 1), range(num_time)):
                 for i in [11]:  # range(len(test_dataset)):
                     data = test_dataset[i]
                     render_bkgd = data["color_bkgd"]
