@@ -170,7 +170,7 @@ if __name__ == "__main__":
     attempts = 0
     tic = time.time()
     mode_switch_step = 10000
-    safe_step = int(1e16)
+    safe_step = 200  # int(1e16)
     num_data = len(train_dataset)
     if not args.just_render:
         for epoch in range(10000000):
@@ -217,7 +217,10 @@ if __name__ == "__main__":
                 )
                 if step >= safe_step:
                     start_keypoints, end_keypoints = enforce_structure(
-                        radiance_field, scene_aabb, 256
+                        radiance_field=radiance_field,
+                        scene_aabb=scene_aabb,
+                        num_samples=1024,
+                        max_time_diff=0.15,
                     )
                 if n_rendering_samples == 0:
                     continue
