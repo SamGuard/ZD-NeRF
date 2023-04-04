@@ -125,8 +125,10 @@ def render_image(
     )
 
 
+from mlp import ZD_NeRFRadianceField
+
 def enforce_structure(
-    radiance_field: torch.nn.Module,
+    radiance_field: ZD_NeRFRadianceField,
     scene_aabb: torch.Tensor,
     num_samples: int,
     max_time_diff=0.01,
@@ -147,4 +149,4 @@ def enforce_structure(
         (direction_magnitude, direction_magnitude, direction_magnitude), dim=1
     )
 
-    return radiance_field.enforce(sample_points, random_dirs, t_diff=max_time_diff)
+    return radiance_field.flow_field_pred(sample_points, random_dirs, t_diff=max_time_diff)
