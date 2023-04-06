@@ -361,7 +361,7 @@ if __name__ == "__main__":
 
         radiance_field.eval()
         step = 0
-        num_time = parser.num_renders
+        num_time = args.num_renders
         timestamps = torch.tensor([[0.0]], dtype=torch.float32).to(device)
         with torch.no_grad():
             for i in range(10):
