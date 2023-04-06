@@ -80,6 +80,12 @@ if __name__ == "__main__":
         help="Bool, whether to train or not, just render",
         type=lambda x: x.lower() == "true",
     )
+    parser.add_argument(
+        "--num_renders",
+        default=11,
+        help="Int, number of images to render. Only has effect when just_render is True",
+        type=int,
+    )
     parser.add_argument("--cone_angle", type=float, default=0.0)
     parser.add_argument("--max_steps", type=int, default=50000)
     parser.add_argument("--model", type=str, default="")
@@ -355,7 +361,7 @@ if __name__ == "__main__":
 
         radiance_field.eval()
         step = 0
-        num_time = 11
+        num_time = parser.num_renders
         timestamps = torch.tensor([[0.0]], dtype=torch.float32).to(device)
         with torch.no_grad():
             for i in range(10):
