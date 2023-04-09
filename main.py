@@ -222,7 +222,7 @@ if __name__ == "__main__":
                     render_step_size=render_step_size,
                     render_bkgd=render_bkgd,
                     cone_angle=args.cone_angle,
-                    # Temporary change as may be causing issues, to revert change first value to 0.01
+                    # Temporary change as may be causing issues, to revert, change first value to 0.01
                     alpha_thre=0.00 if step > 1000 else 0.00,
                     # dnerf options
                     timestamps=timestamps,
@@ -248,7 +248,7 @@ if __name__ == "__main__":
                 alive_ray_mask = acc.squeeze(-1) > 0
 
                 if alive_ray_mask.long().sum() == 0:
-                    if attempts < 10:
+                    if attempts < 50:
                         set_random_seed(int(time.time()))
                         radiance_field, optimizer = new_model()
                         attempts += 1
