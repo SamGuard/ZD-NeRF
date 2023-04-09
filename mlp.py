@@ -588,5 +588,4 @@ class ZD_NeRFRadianceField(nn.Module):
         )  # Sample what the nerf thinks the colour should be here
 
         alive_mask = self.query_density(x, torch.full(size=(x.shape[0], 1), fill_value=t_start, device=x.device)).squeeze(-1) > 0
-        print(alive_mask.long().sum())
         return init_rgb[alive_mask], end_rgb[alive_mask]

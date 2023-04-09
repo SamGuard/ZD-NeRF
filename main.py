@@ -199,7 +199,7 @@ if __name__ == "__main__":
                         radiance_field.warp,
                         train_dataset.points_time,
                         train_dataset.points_data,
-                        20,
+                        200,
                     )
 
                 # update occupancy grid
@@ -231,8 +231,8 @@ if __name__ == "__main__":
                     start_keypoints, end_keypoints = enforce_structure(
                         radiance_field=radiance_field,
                         scene_aabb=scene_aabb,
-                        num_samples=1024,
-                        max_time_diff=0.15,
+                        num_samples=4096,
+                        max_time_diff=0.25,
                     )
                 if n_rendering_samples == 0:
                     continue
@@ -243,7 +243,7 @@ if __name__ == "__main__":
                     num_rays * (target_sample_batch_size / float(n_rendering_samples))
                 )
                 # TEMPORARY FIX, CHANGE min/max rays TO arg
-                num_rays = max(min(40000, num_rays), 1000)
+                num_rays = max(min(40000, num_rays), 5000)
                 train_dataset.update_num_rays(num_rays)
                 alive_ray_mask = acc.squeeze(-1) > 0
 

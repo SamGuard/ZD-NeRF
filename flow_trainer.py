@@ -10,7 +10,7 @@ def train_flow_field(
     points.requires_grad_()
     timestamps.requires_grad_()
 
-    optimizer = torch.optim.Adam(warp.parameters(), 0.01)
+    optimizer = torch.optim.Adam(warp.parameters(), 0.001)
 
     step = 0
     while step < epochs:
