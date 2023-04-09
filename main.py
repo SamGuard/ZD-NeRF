@@ -194,6 +194,7 @@ if __name__ == "__main__":
                 )
 
                 if step == flow_field_start_step:
+                    # Decreased epochs for testing, revert once done
                     train_flow_field(
                         radiance_field.warp,
                         train_dataset.points_time,
