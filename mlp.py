@@ -586,4 +586,7 @@ class ZD_NeRFRadianceField(nn.Module):
         end_rgb, _ = self.forward(
             x_flow, t_end_expanded, dirs
         )  # Sample what the nerf thinks the colour should be here
-        return init_rgb, end_rgb
+
+        alive_mask = self.query_density(x, t_start).squeeze(-1) > 0
+        
+        return init_rgb[alive_mask], end_rgb[alive_mask]
