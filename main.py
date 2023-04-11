@@ -60,6 +60,7 @@ if __name__ == "__main__":
             "world_deform_v2",
             "brick",
             "brick_v2",
+            "bouncy"
         ],
         help="which scene to use",
     )
