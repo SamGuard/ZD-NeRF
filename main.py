@@ -265,11 +265,11 @@ if __name__ == "__main__":
 
                 # compute loss
                 loss_nerf = F.smooth_l1_loss(
-                    rgb[alive_ray_mask], pixels[alive_ray_mask]
+                    rgb[alive_ray_mask], pixels[alive_ray_mask], beta=0.05
                 )
 
                 loss_nerf_flow = (
-                    F.smooth_l1_loss(start_keypoints, end_keypoints)
+                    F.smooth_l1_loss(start_keypoints, end_keypoints, beta=0.05)
                     if (step >= flow_field_start_step)
                     else 0
                 )
