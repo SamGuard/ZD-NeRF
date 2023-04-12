@@ -67,7 +67,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--aabb",
         type=lambda s: [float(item) for item in s.split(",")],
-        default="-3,-3,-3,3,3,3",
+        default="-5,-5,-5,5,5,5",
         help="delimited list input",
     )
     parser.add_argument(
