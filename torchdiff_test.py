@@ -31,13 +31,13 @@ def test():
 
 
 with profile(
-    activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes=True
+    activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes=True, 
 ) as prof:
     with record_function("model_inference"):
         test()
 
 open("profiler.out", "w").write(
     prof.key_averages(group_by_input_shape=True).table(
-        sort_by="cpu_time", row_limit=100
+        sort_by="cpu_time", row_limit=100, top_level_events_only=True
     )
 )
