@@ -21,7 +21,7 @@ def train_flow_field(
     loss = 0
     go = True
     while go:
-        pred = odeint(warp.odefunc, points[0], timestamps)[1:]
+        pred = odeint(warp.odefunc, points[0], timestamps, rtol=1e-4, atol=1e-5)[1:]
         loss += F.smooth_l1_loss(pred, points[1:])
         if(step % batch_size == 0):
             optimizer.zero_grad()
