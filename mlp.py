@@ -16,9 +16,9 @@ import torch.nn.functional as F
 from torch.autograd.functional import jacobian
 from functorch import vmap, jacrev, make_functional
 
-from torchdiffeq import odeint_adjoint as torchdiffeq_odeint
+from torchdiffeq import odeint as torchdiffeq_odeint
 
-#from libs.torchdyn.torchdyn.numerics import odeint_mshooting
+# from libs.torchdyn.torchdyn.numerics import odeint_mshooting
 
 
 class MLP(nn.Module):
@@ -202,19 +202,23 @@ class SinusoidalEncoder(nn.Module):
             latent = torch.cat([x] + [latent], dim=-1)
         return latent
 
+
 class IdentityEncoder(nn.Module):
     """Identity encoder, returns what is put in"""
 
     def __init__(self, dim):
         super().__init__()
-        self.dim =  dim
-    
+        self.dim = dim
+
     @property
-    def latent_dim(self,) -> int:
+    def latent_dim(
+        self,
+    ) -> int:
         return self.dim
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return x
+
 
 class VanillaNeRFRadianceField(nn.Module):
     def __init__(
@@ -268,8 +272,8 @@ class TimeNeRFRadianceField(nn.Module):
         net_width_condition: int = 128,  # The width of the second part of MLP.
     ) -> None:
         super().__init__()
-        #self.posi_encoder = SinusoidalEncoder(4, 0, 10, True)
-        #self.view_encoder = SinusoidalEncoder(3, 0, 4, True)
+        # self.posi_encoder = SinusoidalEncoder(4, 0, 10, True)
+        # self.view_encoder = SinusoidalEncoder(3, 0, 4, True)
         self.posi_encoder = IdentityEncoder(4)
         self.view_encoder = IdentityEncoder(3)
         self.mlp = NerfMLP(
@@ -458,7 +462,11 @@ class ODEBlock_Forward(nn.Module):
         Integrates all values in x from start_t to end_t using odefunc
         """
         warped = torchdiffeq_odeint(
-            func=self.odefunc, y0=x, t=torch.tensor([start_t, end_t], device=x.device),# atol=0.01, rtol=0.1
+            func=self.odefunc,
+            y0=x,
+            t=torch.tensor([start_t, end_t], device=x.device),
+            rtol=1e-4,
+            atol=1e-5,
         )
         return warped[1]
 
@@ -501,7 +509,7 @@ class ODEBlock_Forward(nn.Module):
         out = morphed[args, r]
 
         return out"""
-    
+
 
 class DNeRFRadianceField(nn.Module):
     def __init__(self) -> None:
@@ -580,11 +588,18 @@ class ZD_NeRFRadianceField(nn.Module):
             size=(x.shape[0], 1), fill_value=t_end, device=x.device
         )
 
-        init_rgb, _ = self.forward(x, t_start_expanded, dirs)  # RGB at the starting point
+        init_rgb, _ = self.forward(
+            x, t_start_expanded, dirs
+        )  # RGB at the starting point
         x_flow = self.warp(t_start, t_end, x)  # Warp point to new location
         end_rgb, _ = self.forward(
             x_flow, t_end_expanded, dirs
         )  # Sample what the nerf thinks the colour should be here
 
-        alive_mask = self.query_density(x, torch.full(size=(x.shape[0], 1), fill_value=t_start, device=x.device)).squeeze(-1) > 0
+        alive_mask = (
+            self.query_density(
+                x, torch.full(size=(x.shape[0], 1), fill_value=t_start, device=x.device)
+            ).squeeze(-1)
+            > 0
+        )
         return init_rgb[alive_mask], end_rgb[alive_mask]
