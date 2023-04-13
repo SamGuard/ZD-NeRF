@@ -3,7 +3,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
-from torchdiffeq import odeint_adjoint as odeint
+from torchdiffeq import odeint as odeint
 
 
 
