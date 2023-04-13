@@ -18,7 +18,7 @@ from functorch import vmap, jacrev, make_functional
 
 from torchdiffeq import odeint_adjoint as torchdiffeq_odeint
 
-# from libs.torchdyn.torchdyn.numerics import odeint_mshooting
+from libs.torchdyn.torchdyn.numerics import odeint_mshooting
 
 
 class MLP(nn.Module):
@@ -316,8 +316,7 @@ class CurlField(nn.Module):
         return self.predict_batch(t, x.reshape(1, -1)).squeeze()
 
     def predict_batch(self, t, x):
-        x = torch.cat((x, torch.zeros(size=(len(x), 1), device=x.device) + t), dim=1)
-        x = self.func(x)
+        x = self.func(t, x)
         return x
 
     def curl_func_3d(self, t: torch.Tensor, x: torch.Tensor):
@@ -459,7 +458,7 @@ class ODEBlock_Forward(nn.Module):
         Integrates all values in x from start_t to end_t using odefunc
         """
         warped = torchdiffeq_odeint(
-            func=self.odefunc, y0=x, t=torch.tensor([start_t, end_t], device=x.device)
+            func=self.odefunc, y0=x, t=torch.tensor([start_t, end_t], device=x.device, atol=0.01, rtol=0.1)
         )
         return warped[1]
 
@@ -502,7 +501,7 @@ class ODEBlock_Forward(nn.Module):
         out = morphed[args, r]
 
         return out"""
-
+    
 
 class DNeRFRadianceField(nn.Module):
     def __init__(self) -> None:
