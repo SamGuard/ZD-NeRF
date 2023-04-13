@@ -20,6 +20,9 @@ from flow_trainer import train_flow_field
 
 from nerfacc import ContractionType, OccupancyGrid
 
+# For testing
+from torch.profiler import profile, record_function, ProfilerActivity
+
 
 def new_model():
     radiance_field = ZD_NeRFRadianceField().to(device)
@@ -60,7 +63,7 @@ if __name__ == "__main__":
             "world_deform_v2",
             "brick",
             "brick_v2",
-            "bouncy"
+            "bouncy",
         ],
         help="which scene to use",
     )
@@ -173,6 +176,18 @@ if __name__ == "__main__":
         resolution=grid_resolution,
         contraction_type=contraction_type,
     ).to(device)
+
+    with profile(
+        activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes=True
+    ) as prof:
+        with record_function("model_inference"):
+            train_flow_field(
+                radiance_field.warp,
+                train_dataset.points_time,
+                train_dataset.points_data,
+                5,
+            )
+    print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=10))
 
     # training
     step = 0
@@ -374,7 +389,9 @@ if __name__ == "__main__":
                 )
 
             for t in map(lambda x: x / (num_time - 1), range(num_time)):
-                for i in [0]:  # range(len(test_dataset)): #[int(t * num_time) % len(test_dataset)]:#
+                for i in [
+                    0
+                ]:  # range(len(test_dataset)): #[int(t * num_time) % len(test_dataset)]:#
                     data = test_dataset[i]
                     render_bkgd = data["color_bkgd"]
                     rays = data["rays"]
@@ -416,7 +433,9 @@ if __name__ == "__main__":
                     )
 
                     imageio.imwrite(
-                        os.path.join(RENDER_PATH, "rgb_time_{:.3f}_img_{}.png".format(t, i)),
+                        os.path.join(
+                            RENDER_PATH, "rgb_time_{:.3f}_img_{}.png".format(t, i)
+                        ),
                         (rgb.cpu().numpy() * 255).astype(np.uint8),
                     )
                     print(f"Image at time={t}, render={i}")
