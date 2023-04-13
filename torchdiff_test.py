@@ -38,6 +38,6 @@ with profile(
 
 open("profiler.out", "w").write(
     prof.key_averages(group_by_input_shape=True).table(
-        sort_by="self_cpu", row_limit=100
+        sort_by="self_cpu_time", row_limit=100
     )
 )
