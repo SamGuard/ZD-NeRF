@@ -44,7 +44,7 @@ def train_flow_field_old(
     timestamps.requires_grad_()
 
     optimizer = torch.optim.Adam(warp.parameters(), 5e-2)
-    sched = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=1-1e-2, verbose=True)
+    sched = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=1-5e-4, verbose=True)
 
     step = 0
     batch_size = 1
