@@ -185,9 +185,10 @@ if __name__ == "__main__":
                 radiance_field.warp,
                 train_dataset.points_time,
                 train_dataset.points_data,
-                5,
+                1,
             )
-    print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=10))
+
+        print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=10))
 
     # training
     step = 0
