@@ -188,7 +188,7 @@ if __name__ == "__main__":
                 0,
             )
 
-    print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=10))
+    open("profile.out", "w").write(prof.key_averages().table(sort_by="cpu_time_total", row_limit=10))
     exit(0)
 
     # training
