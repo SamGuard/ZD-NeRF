@@ -33,4 +33,4 @@ with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], record_sh
     with record_function("model_inference"):
       test()
   
-open("profiler.out", "w").write(prof.key_averages(group_by_input_shape=True).table(sort_by="cpu_time", row_limit=100))
+open("profiler.out", "w").write(prof.key_averages(group_by_input_shape=True).table(sort_by="cpu_time_total", row_limit=100))
