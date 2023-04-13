@@ -200,7 +200,7 @@ if __name__ == "__main__":
                         radiance_field.warp,
                         train_dataset.points_time,
                         train_dataset.points_data,
-                        200,
+                        20,
                     )
 
                 # update occupancy grid

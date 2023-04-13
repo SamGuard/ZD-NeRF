@@ -458,7 +458,7 @@ class ODEBlock_Forward(nn.Module):
         Integrates all values in x from start_t to end_t using odefunc
         """
         warped = torchdiffeq_odeint(
-            func=self.odefunc, y0=x, t=torch.tensor([start_t, end_t], device=x.device, atol=0.01, rtol=0.1)
+            func=self.odefunc, y0=x, t=torch.tensor([start_t, end_t], device=x.device)#, atol=0.01, rtol=0.1)
         )
         return warped[1]
 
