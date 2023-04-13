@@ -189,6 +189,7 @@ if __name__ == "__main__":
             )
 
     print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=10))
+    exit(0)
 
     # training
     step = 0
