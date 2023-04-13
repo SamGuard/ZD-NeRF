@@ -15,7 +15,7 @@ odefunc = NeuralField(4, 3, 32, 8).to(DEVICE)
 
 def test():
     optim = torch.optim.Adam(odefunc.parameters())
-    for i in range(2):
+    for i in range(10):
         pred = odeint(
             func=odefunc,
             y0=x,
@@ -38,6 +38,6 @@ with profile(
 
 open("profiler.out", "w").write(
     prof.key_averages(group_by_input_shape=True).table(
-        sort_by="cpu_time_total", row_limit=100
+        sort_by="self_cpu", row_limit=100
     )
 )
