@@ -10,12 +10,13 @@ def test():
     steps = 50
     odefunc = NeuralField(4, 3, 32, 8).to(DEVICE)
     num_data = 2**15
+    x = torch.rand(size=(num_data, 3)).to(DEVICE)
+    y = torch.rand(size=(steps - 1, num_data, 3)).to(DEVICE)
     t = torch.linspace(0, 1, steps).to(DEVICE)
 
     optim = torch.optim.Adam(odefunc.parameters())
     for i in range(2):
-        x = torch.rand(size=(num_data, 3)).to(DEVICE)
-        y = torch.rand(size=(steps - 1, num_data, 3)).to(DEVICE)
+        
         pred = odeint(
             func=odefunc,
             y0=x,
