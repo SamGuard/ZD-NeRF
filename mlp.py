@@ -18,7 +18,7 @@ from functorch import vmap, jacrev, make_functional
 
 from torchdiffeq import odeint_adjoint as torchdiffeq_odeint
 
-from libs.torchdyn.torchdyn.numerics import odeint_mshooting
+#from libs.torchdyn.torchdyn.numerics import odeint_mshooting
 
 
 class MLP(nn.Module):
