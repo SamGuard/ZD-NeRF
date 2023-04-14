@@ -13,7 +13,7 @@ def train_flow_field(
     points.requires_grad_()
     timestamps.requires_grad_()
 
-    optimizer = torch.optim.Adam(warp.parameters(), 5e-2)
+    optimizer = torch.optim.Adam(warp.parameters(), 5e-1)
     sched = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=1-1e-2, verbose=True)
 
     step = 0

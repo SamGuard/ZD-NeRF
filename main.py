@@ -181,7 +181,8 @@ if __name__ == "__main__":
     step = 0
     attempts = 0
     tic = time.time()
-    flow_field_start_step = 10000  # int(1e16)
+    flow_field_start_step = 5000  # int(1e16)
+    flow_field_n_steps = 10
     num_data = len(train_dataset)
     if not args.just_render:
         for epoch in range(10000000):
@@ -231,11 +232,11 @@ if __name__ == "__main__":
                     # dnerf options
                     timestamps=timestamps,
                 )
-                if step >= flow_field_start_step:
+                if step >= flow_field_start_step and 0 == (step - flow_field_start_step) % flow_field_n_steps:
                     start_keypoints, end_keypoints = enforce_structure(
                         radiance_field=radiance_field,
                         scene_aabb=scene_aabb,
-                        num_samples=4096,
+                        num_samples=2**15,
                         max_time_diff=0.25,
                     )
                 if n_rendering_samples == 0:
