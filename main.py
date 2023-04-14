@@ -181,8 +181,8 @@ if __name__ == "__main__":
     step = 0
     attempts = 0
     tic = time.time()
-    flow_field_start_step = 5000  # int(1e16)
-    flow_field_n_steps = 10
+    flow_field_start_step = 20000  # int(1e16)
+    flow_field_n_steps = 5
     num_data = len(train_dataset)
     if not args.just_render:
         for epoch in range(10000000):
@@ -250,7 +250,7 @@ if __name__ == "__main__":
                 else:
                     loss_nerf_flow = 0
 
-                    
+
                 if n_rendering_samples == 0:
                     continue
 
