@@ -205,7 +205,7 @@ if __name__ == "__main__":
                         train_dataset.points_time,
                         train_dataset.points_data,
                         200,
-                        alpha=0.05
+                        alpha=0.05,
                     )
 
                 # update occupancy grid
@@ -233,13 +233,24 @@ if __name__ == "__main__":
                     # dnerf options
                     timestamps=timestamps,
                 )
-                if step >= flow_field_start_step and 0 == (step - flow_field_start_step) % flow_field_n_steps:
+                if (
+                    step >= flow_field_start_step
+                    and 0 == (step - flow_field_start_step) % flow_field_n_steps
+                ):
                     start_keypoints, end_keypoints = enforce_structure(
                         radiance_field=radiance_field,
                         scene_aabb=scene_aabb,
                         num_samples=2**15,
                         max_time_diff=0.25,
                     )
+
+                    loss_nerf_flow = F.smooth_l1_loss(
+                        start_keypoints, end_keypoints, beta=0.05
+                    )
+                else:
+                    loss_nerf_flow = 0
+
+                    
                 if n_rendering_samples == 0:
                     continue
 
@@ -273,11 +284,6 @@ if __name__ == "__main__":
                     rgb[alive_ray_mask], pixels[alive_ray_mask], beta=0.05
                 )
 
-                loss_nerf_flow = (
-                    F.smooth_l1_loss(start_keypoints, end_keypoints, beta=0.05)
-                    if (step >= flow_field_start_step)
-                    else 0
-                )
                 loss = loss_nerf + loss_nerf_flow
                 optimizer.zero_grad()
                 # do not unscale it because we are using Adam.
