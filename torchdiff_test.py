@@ -34,7 +34,7 @@ def test_odeint():
 def test_enforce():
     radiance_field = ZD_NeRFRadianceField().to(DEVICE)
     optim = torch.optim.Adam(radiance_field.parameters())
-    for i in range(2):
+    for i in range(10):
         start_keypoints, end_keypoints = enforce_structure(
             radiance_field,
             torch.tensor([-3, -3, -3, 3, 3, 3], dtype=torch.float32, device=DEVICE),
