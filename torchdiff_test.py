@@ -1,6 +1,7 @@
 import torch
 from torchdiffeq import odeint
-from mlp import NeuralField
+from mlp import NeuralField, ZD_NeRFRadianceField
+from utils import enforce_structure
 from torch.profiler import profile, record_function, ProfilerActivity
 
 DEVICE = "cuda:0" if torch.cuda.is_available() else "cpu"
@@ -13,7 +14,7 @@ t = torch.linspace(0, 1, steps).to(DEVICE)
 odefunc = NeuralField(4, 3, 32, 8).to(DEVICE)
 
 
-def test():
+def test_odeint():
     optim = torch.optim.Adam(odefunc.parameters())
     for i in range(10):
         pred = odeint(
@@ -30,14 +31,37 @@ def test():
         print(f"Step {i}, loss {loss}")
 
 
+def test_enforce():
+    radiance_field = ZD_NeRFRadianceField().to(DEVICE)
+    optim = torch.optim.Adam(radiance_field.parameters())
+    for i in range(2):
+        start_keypoints, end_keypoints = enforce_structure(
+            radiance_field,
+            torch.tensor([-3, -3, -3, 3, 3, 3], dtype=torch.float32, device=DEVICE),
+            num_samples=4096,
+            max_time_diff=0.25,
+            device=DEVICE
+        )
+
+        loss = torch.nn.functional.smooth_l1_loss(
+            start_keypoints, end_keypoints, beta=0.05
+        )
+        optim.zero_grad()
+        loss.backward()
+        optim.step()
+        print(f"{i} {len(start_keypoints)} {len(end_keypoints)} {loss}")
+
+
 with profile(
-    activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes=True, 
+    activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
+    record_shapes=True,
 ) as prof:
     with record_function("model_inference"):
-        test()
+        # test_odeint()
+        test_enforce()
 
 open("profiler.out", "w").write(
     prof.key_averages(group_by_input_shape=True).table(
-        sort_by="cpu_time", row_limit=100, top_level_events_only=True
+        sort_by="cpu_time_total", row_limit=100,
     )
 )
