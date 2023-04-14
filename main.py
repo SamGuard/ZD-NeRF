@@ -201,10 +201,11 @@ if __name__ == "__main__":
                 if step == flow_field_start_step:
                     # Decreased epochs for testing, revert once done
                     train_flow_field(
-                        radiance_field.warp,
+                        radiance_field.warp.odefunc,
                         train_dataset.points_time,
                         train_dataset.points_data,
                         200,
+                        alpha=0.05
                     )
 
                 # update occupancy grid

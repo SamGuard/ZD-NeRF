@@ -1,19 +1,19 @@
-import numpy as np
 import torch
-from torch import nn
 import torch.nn.functional as F
+from torch import nn
 
-from torchdiffeq import odeint as odeint
+import numpy as np
 
+from torchdiffeq import odeint_adjoint as odeint
 
 
 def train_flow_field(
-    warp: nn.Module, timestamps: torch.Tensor, points: torch.Tensor, epochs=50
+    odefunc: nn.Module, timestamps: torch.Tensor, points_base: torch.Tensor, epochs=50, alpha=0.05
 ):
-    points.requires_grad_()
-    timestamps.requires_grad_()
+    """points_base.requires_grad_()
+    timestamps.requires_grad_()"""
 
-    optimizer = torch.optim.Adam(warp.parameters(), 5e-1)
+    optimizer = torch.optim.Adam(odefunc.parameters(), 5e-3)
     sched = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=1-1e-2, verbose=True)
 
     step = 0
@@ -21,7 +21,8 @@ def train_flow_field(
     loss = 0
     go = True
     while go:
-        pred = odeint(warp.odefunc, points[0], timestamps, rtol=1e-4, atol=1e-5)[1:]
+        points = points_base + torch.rand_like(points_base, device=points_base.device) * alpha
+        pred = odeint(odefunc, points[0], timestamps, rtol=1e-4, atol=1e-5)[1:]
         loss += F.smooth_l1_loss(pred, points[1:])
         if(step % batch_size == 0):
             optimizer.zero_grad()
