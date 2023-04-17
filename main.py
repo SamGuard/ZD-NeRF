@@ -27,7 +27,17 @@ from torch.profiler import profile, record_function, ProfilerActivity
 def new_model():
     radiance_field = ZD_NeRFRadianceField().to(device)
     optimizer = torch.optim.Adam(radiance_field.parameters(), lr=5e-4)
-    return radiance_field, optimizer
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(
+        optimizer,
+        milestones=[
+            max_steps // 2,
+            max_steps * 3 // 4,
+            max_steps * 5 // 6,
+            max_steps * 9 // 10,
+        ],
+        gamma=0.33,
+    )
+    return radiance_field, optimizer, scheduler
 
 
 if __name__ == "__main__":
@@ -130,17 +140,8 @@ if __name__ == "__main__":
     # setup the radiance field we want to train.
     max_steps = args.max_steps
     grad_scaler = torch.cuda.amp.GradScaler(1)
-    radiance_field, optimizer = new_model()
-    scheduler = torch.optim.lr_scheduler.MultiStepLR(
-        optimizer,
-        milestones=[
-            max_steps // 2,
-            max_steps * 3 // 4,
-            max_steps * 5 // 6,
-            max_steps * 9 // 10,
-        ],
-        gamma=0.33,
-    )
+    radiance_field, optimizer, scheduler = new_model()
+    
     # setup the dataset
     data_root_fp = "/home/ruilongli/data/dnerf/"
     target_sample_batch_size = args.ray_batch_size
@@ -266,8 +267,11 @@ if __name__ == "__main__":
 
                 if alive_ray_mask.long().sum() == 0:
                     if attempts < 50:
+                        del radiance_field
+                        del optimizer
+                        del scheduler
                         set_random_seed(int(time.time()))
-                        radiance_field, optimizer = new_model()
+                        radiance_field, optimizer, scheduler = new_model()
                         attempts += 1
                         step = 0
                         print(
@@ -284,7 +288,7 @@ if __name__ == "__main__":
                     rgb[alive_ray_mask], pixels[alive_ray_mask], beta=0.05
                 )
 
-                loss = loss_nerf + loss_nerf_flow
+                loss = loss_nerf + 0.1 * loss_nerf_flow
                 optimizer.zero_grad()
                 # do not unscale it because we are using Adam.
                 grad_scaler.scale(loss).backward()
@@ -296,7 +300,8 @@ if __name__ == "__main__":
                     loss = F.mse_loss(rgb[alive_ray_mask], pixels[alive_ray_mask])
                     print(
                         f"elapsed_time={elapsed_time:.2f}s | step={step} | "
-                        f"loss={loss:.5f} | "
+                        f"loss_nerf={loss_nerf:.5f} | ",
+                        f"loss_flow={loss_nerf_flow:.5f}",
                         f"alive_ray_mask={alive_ray_mask.long().sum():d} | "
                         f"n_rendering_samples={n_rendering_samples:d} | num_rays={len(pixels):d} |"
                     )
