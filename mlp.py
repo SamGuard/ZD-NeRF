@@ -369,7 +369,7 @@ class CurlField(nn.Module):
 
 
 class DivergenceFreeNeuralField(nn.Module):
-    def __init__(self, spatial_dims=3, other_inputs=1, width=32, depth=8):
+    def __init__(self, spatial_dims=3, other_inputs=1, width=32, depth=8, activation=nn.Tanh):
         super().__init__()
 
         self.spatial_dims = spatial_dims
@@ -379,10 +379,10 @@ class DivergenceFreeNeuralField(nn.Module):
         networks = nn.ModuleList()
         for i in range(spatial_dims):
             layers = nn.Sequential(nn.Linear(spatial_dims + other_inputs - 1, width))
-            layers.append(nn.Tanh())
+            layers.append(activation())
             for i in range(depth - 2):
                 layers.append(nn.Linear(width, width))
-                layers.append(nn.Tanh())
+                layers.append(activation())
             layers.append(nn.Linear(width, 1))
             networks.append(layers)
 
@@ -422,7 +422,12 @@ class NeuralField(nn.Module):
             self.layers.append(nn.Linear(width, width))
         self.layers.append(nn.Linear(width, out_dim))
 
-    def forward(self, t, x):
+    def forward(self, t, x: torch.Tensor):
+        if len(x.shape) == 3:
+            for i in range(x.shape[0]):
+                x[i] = self.forward(t, x[i, :, :])
+            return x
+
         x = torch.cat((x, torch.zeros((x.shape[0], 1), device=t.device) + t), dim=1)
         for l in self.layers[:-1]:
             x = torch.tanh(l(x))
