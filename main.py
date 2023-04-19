@@ -388,12 +388,12 @@ if __name__ == "__main__":
                         x, timestamps, render_step_size
                     ),
                 )
-            train_dataset.training = False
+
             for t in map(lambda x: x / (num_time - 1), range(num_time)):
                 for i in [
                     0
                 ]:  # range(len(test_dataset)): #[int(t * num_time) % len(test_dataset)]:#
-                    data = train_dataset[i]
+                    data = test_dataset[i]
                     render_bkgd = data["color_bkgd"]
                     rays = data["rays"]
                     pixels = data["pixels"]
