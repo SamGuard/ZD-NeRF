@@ -182,8 +182,8 @@ if __name__ == "__main__":
     step = 0
     attempts = 0
     tic = time.time()
-    flow_field_start_step = 150000  # int(1e16)
-    flow_field_n_steps = 2
+    flow_field_start_step = 20000  # int(1e16)
+    flow_field_n_steps = 1
     num_data = len(train_dataset)
     if not args.just_render:
         for epoch in range(10000000):
@@ -241,7 +241,7 @@ if __name__ == "__main__":
                     start_keypoints, end_keypoints = enforce_structure(
                         radiance_field=radiance_field,
                         scene_aabb=scene_aabb,
-                        num_samples=2**15,
+                        num_samples=2**16,
                         max_time_diff=0.25,
                     )
 
@@ -288,7 +288,7 @@ if __name__ == "__main__":
                     rgb[alive_ray_mask], pixels[alive_ray_mask], beta=0.05
                 )
 
-                loss = loss_nerf + 0.1 * loss_nerf_flow
+                loss = loss_nerf + loss_nerf_flow
                 optimizer.zero_grad()
                 # do not unscale it because we are using Adam.
                 grad_scaler.scale(loss).backward()
@@ -301,9 +301,9 @@ if __name__ == "__main__":
                     print(
                         f"elapsed_time={elapsed_time:.2f}s | step={step} | "
                         f"loss_nerf={loss_nerf:.5f} | ",
-                        f"loss_flow={loss_nerf_flow:.5f}",
+                        f"loss_flow={loss_nerf_flow:.5f} |",
                         f"alive_ray_mask={alive_ray_mask.long().sum():d} | "
-                        f"n_rendering_samples={n_rendering_samples:d} | num_rays={len(pixels):d} |"
+                        f"n_rendering_samples={n_rendering_samples:d} |"
                     )
 
                 if step % 5000 == 0:
