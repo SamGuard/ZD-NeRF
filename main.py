@@ -205,8 +205,8 @@ if __name__ == "__main__":
                         radiance_field.warp.odefunc,
                         train_dataset.points_time,
                         train_dataset.points_data,
-                        200,
-                        alpha=0.05,
+                        epochs=1000,
+                        steps_ahead=5
                     )
 
                 # update occupancy grid
