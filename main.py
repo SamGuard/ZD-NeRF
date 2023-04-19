@@ -182,7 +182,7 @@ if __name__ == "__main__":
     step = 0
     attempts = 0
     tic = time.time()
-    flow_field_start_step = 15000  # int(1e16)
+    flow_field_start_step = 150000  # int(1e16)
     flow_field_n_steps = 2
     num_data = len(train_dataset)
     if not args.just_render:
