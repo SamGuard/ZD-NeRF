@@ -5,8 +5,6 @@ from torch import nn
 import numpy as np
 
 from torchdiffeq import odeint as odeint
-from libs.torchdyn.torchdyn.numerics import odeint_mshooting
-from libs.torchdyn.torchdyn.core.neuralde import NeuralODE
 
 def train_flow_field(
     odefunc: nn.Module,
@@ -111,6 +109,7 @@ def train_flow_field_old(
         # points = points_base + torch.rand_like(points_base, device=points_base.device) * alpha
         points = points_base
         if ms_shooting:
+            """ depracated need to remove
             pred = odeint_mshooting(
                 odefunc,
                 points[0],
@@ -118,7 +117,7 @@ def train_flow_field_old(
                 solver="mszero",
                 B0=points.clone(),
                 fine_steps=len(points),
-            )[1][1:]
+            )[1][1:]"""
         else:
             pred = odeint(odefunc, points[0], timestamps, rtol=1e-7, atol=1e-9)[1:]
         loss += torch.mean(((pred - points[1:]) * loss_scaler) ** 2)
