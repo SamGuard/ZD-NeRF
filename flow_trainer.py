@@ -31,27 +31,26 @@ def train_flow_field(
     )
 
     step = 0
-    batch_size = 1
+    batch_size = 4
     loss = 0
     go = True
     while go:
         # Add random noise
         # points = points_base + torch.rand_like(points_base, device=points_base.device) * alpha
-        is_reversed = 1 if torch.rand(size=(1,)) > 0.5 else -1
+        reversed = 1 if torch.rand(size=(1,)) > 0.5 else -1
         start_t = int(torch.rand(size=(1,)) * (len(timestamps_base) - steps_ahead))
-        start_t += steps_ahead if is_reversed == -1 else 0
-        start_t
-        end_t = start_t + is_reversed * steps_ahead
+        start_t += steps_ahead if reversed == -1 else 0
+        end_t = start_t + reversed * steps_ahead
 
         points = (
             torch.flip(points_base[end_t : start_t + 1], dims=(0,))
-            if is_reversed == -1
+            if reversed == -1
             else points_base[start_t : end_t + 1]
         )
 
         timestamps = (
             torch.flip(timestamps_base[end_t : start_t + 1], dims=(0,))
-            if is_reversed == -1
+            if reversed == -1
             else timestamps_base[start_t : end_t + 1]
         )
 
@@ -63,7 +62,7 @@ def train_flow_field(
             atol=1e-9,
         )[1:]
         loss += F.mse_loss(pred, points[1:])
-        if step % batch_size == 0:
+        if step % batch_size == 0 and step > 0:
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
