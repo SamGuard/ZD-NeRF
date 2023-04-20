@@ -145,7 +145,7 @@ def enforce_structure(
     )
 
     # Get random view dirs to use when rendering the points
-    idx = torch.randint(0, len(rays_d), n_samples)
+    idx = torch.randint(0, len(rays_d), (n_samples,))
 
     return radiance_field.flow_field_pred(sample_points, rays_d[idx], t_diff=max_time_diff)
 
@@ -153,3 +153,7 @@ def keypoints_loss(radiance_field: ZD_NeRFRadianceField, points: torch.Tensor, r
     # If alpha is greater than 0, you can sample the same set of keypoints more than once
     if(alpha > 0.0):
         torch.randint(0, len(points), n_samples, device=points.device)
+    else:
+        raise NotImplemented("Need to implement for when alpha is 0")
+    
+    

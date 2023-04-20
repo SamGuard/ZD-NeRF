@@ -206,7 +206,7 @@ if __name__ == "__main__":
                         radiance_field.warp.odefunc,
                         train_dataset.points_time,
                         train_dataset.points_data,
-                        epochs=1000,
+                        epochs=5,
                         steps_ahead=5,
                     )
 
