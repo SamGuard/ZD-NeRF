@@ -141,7 +141,7 @@ if __name__ == "__main__":
     max_steps = args.max_steps
     grad_scaler = torch.cuda.amp.GradScaler(1)
     radiance_field, optimizer, scheduler = new_model()
-    
+
     # setup the dataset
     data_root_fp = "/home/ruilongli/data/dnerf/"
     target_sample_batch_size = args.ray_batch_size
@@ -182,7 +182,7 @@ if __name__ == "__main__":
     step = 0
     attempts = 0
     tic = time.time()
-    flow_field_start_step = 20000  # int(1e16)
+    flow_field_start_step = int(1e16)  # 20000  #
     flow_field_n_steps = 1
     num_data = len(train_dataset)
     if not args.just_render:
@@ -206,7 +206,7 @@ if __name__ == "__main__":
                         train_dataset.points_time,
                         train_dataset.points_data,
                         epochs=1000,
-                        steps_ahead=5
+                        steps_ahead=5,
                     )
 
                 # update occupancy grid
@@ -250,7 +250,6 @@ if __name__ == "__main__":
                     )
                 else:
                     loss_nerf_flow = 0
-
 
                 if n_rendering_samples == 0:
                     continue
@@ -303,7 +302,7 @@ if __name__ == "__main__":
                         f"loss_nerf={loss_nerf:.5f} | ",
                         f"loss_flow={loss_nerf_flow:.5f} |",
                         f"alive_ray_mask={alive_ray_mask.long().sum():d} | "
-                        f"n_rendering_samples={n_rendering_samples:d} |"
+                        f"n_rendering_samples={n_rendering_samples:d} |",
                     )
 
                 if step % 5000 == 0:
