@@ -240,6 +240,7 @@ if __name__ == "__main__":
                 ):
                     start_keypoints, end_keypoints = enforce_structure(
                         radiance_field=radiance_field,
+                        rays_d=rays.viewdirs,
                         scene_aabb=scene_aabb,
                         num_samples=2**16,
                         max_time_diff=0.25,
@@ -248,8 +249,10 @@ if __name__ == "__main__":
                     loss_nerf_flow = F.smooth_l1_loss(
                         start_keypoints, end_keypoints, beta=0.05
                     )
+                    n_flow_samples = len(start_keypoints)
                 else:
                     loss_nerf_flow = 0
+                    n_flow_samples = 0
 
                 if n_rendering_samples == 0:
                     continue
@@ -303,6 +306,7 @@ if __name__ == "__main__":
                         f"loss_flow={loss_nerf_flow:.5f} |",
                         f"alive_ray_mask={alive_ray_mask.long().sum():d} | "
                         f"n_rendering_samples={n_rendering_samples:d} |",
+                        f"n_flow_samples={n_flow_samples} |"
                     )
 
                 if step % 5000 == 0:

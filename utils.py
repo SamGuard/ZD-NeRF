@@ -11,6 +11,8 @@ from datasets.utils import Rays, namedtuple_map
 
 from nerfacc import OccupancyGrid, ray_marching, rendering
 
+from mlp import ZD_NeRFRadianceField
+
 
 def set_random_seed(seed):
     random.seed(seed)
@@ -124,11 +126,9 @@ def render_image(
         sum(n_rendering_samples),
     )
 
-
-from mlp import ZD_NeRFRadianceField
-
 def enforce_structure(
     radiance_field: ZD_NeRFRadianceField,
+    rays_d: torch.Tensor,
     scene_aabb: torch.Tensor,
     num_samples: int,
     max_time_diff=0.01,
@@ -143,10 +143,9 @@ def enforce_structure(
     sample_points = (
         torch.rand(size=(num_samples, 3), device=device) * aabb_size + scene_aabb[:3]
     )
-    random_dirs = torch.rand(size=(num_samples, 3), device=device) * 2.0 - 1.0
-    direction_magnitude = torch.sqrt(torch.sum(random_dirs**2, dim=1))
-    random_dirs /= torch.stack(
-        (direction_magnitude, direction_magnitude, direction_magnitude), dim=1
-    )
+    perms = torch.randperm(rays_d.shape[0])
+    idx = perms[:num_samples]
 
-    return radiance_field.flow_field_pred(sample_points, random_dirs, t_diff=max_time_diff)
+    return radiance_field.flow_field_pred(sample_points, rays_d[idx], t_diff=max_time_diff)
+
+#def keypoints_loss(radiance_field: ZD_NeRFRadianceField, )
