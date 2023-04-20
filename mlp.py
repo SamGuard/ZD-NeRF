@@ -19,7 +19,6 @@ from functorch import vmap, jacrev, make_functional
 from torchdiffeq import odeint as torchdiffeq_odeint
 
 
-
 class MLP(nn.Module):
     def __init__(
         self,
@@ -368,7 +367,9 @@ class CurlField(nn.Module):
 
 
 class DivergenceFreeNeuralField(nn.Module):
-    def __init__(self, spatial_dims=3, other_inputs=1, width=32, depth=8, activation=nn.Tanh):
+    def __init__(
+        self, spatial_dims=3, other_inputs=1, width=32, depth=8, activation=nn.Tanh
+    ):
         super().__init__()
 
         self.spatial_dims = spatial_dims
@@ -461,7 +462,14 @@ class ODEBlock_Forward(nn.Module):
         super().__init__()
         self.odefunc = odefunc
 
-    def forward(self, start_t: torch.Tensor, end_t: torch.tensor, x: torch.Tensor):
+    def forward(
+        self,
+        start_t: int,
+        end_t: int,
+        x: torch.Tensor,
+        rtol=1e-4,
+        atol=1e-5,
+    ):
         """
         Integrates all values in x from start_t to end_t using odefunc
         """
@@ -469,50 +477,10 @@ class ODEBlock_Forward(nn.Module):
             func=self.odefunc,
             y0=x,
             t=torch.tensor([start_t, end_t], device=x.device),
-            rtol=1e-4,
-            atol=1e-5,
+            rtol=rtol,
+            atol=atol,
         )
         return warped[1]
-
-    """ 
-    Old code, does not work if there are more than 2 time stamps (during training).
-    For example it will work if there is only data at t=0.0 and t=1.0, but no if
-    there is data at t=0.0,0.5,1.0 as it only works forward in time.
-    def forward(self, t: torch.Tensor, x: torch.Tensor):
-        if len(x) == 0:
-            return torch.zeros_like(x)
-
-        # Need to sort in order of time
-        time_steps, args = torch.unique(t, sorted=True, return_inverse=True)
-
-        if len(time_steps) == 1 and time_steps[0] == 0.0:
-            return x
-
-        has_zero = True
-        if not torch.any(time_steps == 0.0):
-            has_zero = False
-            time_steps = torch.cat((torch.tensor([0]).to("cuda:0"), time_steps), dim=0)
-
-        # Morphed points    
-        morphed = torchdiffeq_odeint(
-            self.odefunc,
-            x,
-            time_steps,
-            rtol=1e-4,
-            atol=1e-3,
-        )
-        if not has_zero:
-            morphed = morphed[1:]
-        # Morphed points contains an array which is of the form:
-        # morphed[time_stamp][index]
-        # As this list is in order of time we need to convert it back to how the time steps were before sorting
-        # To this we index by the args array, which will give all points at a given time
-        # Then indexing by r gives the morphed point at the time given
-        r = torch.linspace(0, x.shape[0] - 1, x.shape[0], dtype=torch.long)
-
-        out = morphed[args, r]
-
-        return out"""
 
 
 class DNeRFRadianceField(nn.Module):
