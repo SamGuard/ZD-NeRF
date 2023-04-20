@@ -270,8 +270,8 @@ if __name__ == "__main__":
                 alive_ray_mask = acc.squeeze(-1) > 0
                 n_alive_rays = alive_ray_mask.long().sum()
 
-                if n_alive_rays  == 0 and False:
-                    if attempts < 50:
+                if n_alive_rays  == 0:
+                    if attempts < 200:
                         del radiance_field
                         del optimizer
                         del scheduler
