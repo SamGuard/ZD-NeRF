@@ -268,7 +268,7 @@ if __name__ == "__main__":
                 train_dataset.update_num_rays(num_rays)
                 alive_ray_mask = acc.squeeze(-1) > 0
 
-                if alive_ray_mask.long().sum() == 0:
+                if alive_ray_mask.long().sum() == 0 and False:
                     if attempts < 50:
                         del radiance_field
                         del optimizer
