@@ -263,12 +263,14 @@ if __name__ == "__main__":
                 num_rays = int(
                     num_rays * (target_sample_batch_size / float(n_rendering_samples))
                 )
+                n_alive_rays = alive_ray_mask.long().sum()
+
                 # TEMPORARY FIX, CHANGE min/max rays TO arg
                 num_rays = max(min(40000, num_rays), 5000)
                 train_dataset.update_num_rays(num_rays)
                 alive_ray_mask = acc.squeeze(-1) > 0
 
-                if alive_ray_mask.long().sum() == 0 and False:
+                if n_alive_rays  == 0 and False:
                     if attempts < 50:
                         del radiance_field
                         del optimizer
@@ -286,17 +288,18 @@ if __name__ == "__main__":
                         print("No rays hit target, exiting")
                         exit(-1)
 
-                # compute loss
-                loss_nerf = F.smooth_l1_loss(
-                    rgb[alive_ray_mask], pixels[alive_ray_mask], beta=0.05
-                )
+                if(n_alive_rays > 0):
+                    # compute loss
+                    loss_nerf = F.smooth_l1_loss(
+                        rgb[alive_ray_mask], pixels[alive_ray_mask], beta=0.05
+                    )
 
-                loss = loss_nerf + loss_nerf_flow
-                optimizer.zero_grad()
-                # do not unscale it because we are using Adam.
-                grad_scaler.scale(loss).backward()
-                optimizer.step()
-                scheduler.step()
+                    loss = loss_nerf + loss_nerf_flow
+                    optimizer.zero_grad()
+                    # do not unscale it because we are using Adam.
+                    grad_scaler.scale(loss).backward()
+                    optimizer.step()
+                    scheduler.step()
 
                 if step % 1 == 0:
                     elapsed_time = time.time() - tic
