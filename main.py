@@ -106,6 +106,7 @@ if __name__ == "__main__":
     parser.add_argument("--samples", type=int, default=1024)
     parser.add_argument("--train_in_order", type=bool, default=False)
     parser.add_argument("--ray_batch_size", type=int, default=1 << 16)
+    parser.add_argument("--flow_step", type=int, default=10000)
     args = parser.parse_args()
 
     render_n_samples = args.samples
@@ -182,7 +183,7 @@ if __name__ == "__main__":
     step = 0
     attempts = 0
     tic = time.time()
-    flow_field_start_step = int(1e16)  # 20000  #
+    flow_field_start_step = args.flow_step
     flow_field_n_steps = 1
     num_data = len(train_dataset)
     if not args.just_render:
