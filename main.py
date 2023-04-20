@@ -294,7 +294,7 @@ if __name__ == "__main__":
                         rgb[alive_ray_mask], pixels[alive_ray_mask], beta=0.05
                     )
 
-                    loss = loss_nerf + loss_nerf_flow
+                    loss = (1.0 if step < flow_field_start_step else 0.05) * loss_nerf + loss_nerf_flow
                     optimizer.zero_grad()
                     # do not unscale it because we are using Adam.
                     grad_scaler.scale(loss).backward()
