@@ -301,7 +301,7 @@ if __name__ == "__main__":
                     optimizer.step()
                     scheduler.step()
 
-                if step % 1 == 0:
+                if step % 1 == 0 and n_alive_rays > 0:
                     elapsed_time = time.time() - tic
                     loss = F.mse_loss(rgb[alive_ray_mask], pixels[alive_ray_mask])
                     print(
