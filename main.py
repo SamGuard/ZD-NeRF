@@ -243,7 +243,7 @@ if __name__ == "__main__":
                         radiance_field=radiance_field,
                         rays_d=rays.viewdirs,
                         scene_aabb=scene_aabb,
-                        num_samples=2**16,
+                        n_samples=2**16,
                         max_time_diff=0.25,
                     )
 

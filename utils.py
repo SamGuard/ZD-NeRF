@@ -130,7 +130,7 @@ def enforce_structure(
     radiance_field: ZD_NeRFRadianceField,
     rays_d: torch.Tensor,
     scene_aabb: torch.Tensor,
-    num_samples: int,
+    n_samples: int,
     max_time_diff=0.01,
     device="cuda:0",
 ) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -141,11 +141,15 @@ def enforce_structure(
     """
     aabb_size = torch.abs((scene_aabb[3:] - scene_aabb[:3]))
     sample_points = (
-        torch.rand(size=(num_samples, 3), device=device) * aabb_size + scene_aabb[:3]
+        torch.rand(size=(n_samples, 3), device=device) * aabb_size + scene_aabb[:3]
     )
-    perms = torch.randperm(rays_d.shape[0])
-    idx = perms[:num_samples]
+
+    # Get random view dirs to use when rendering the points
+    idx = torch.randint(0, len(rays_d), n_samples)
 
     return radiance_field.flow_field_pred(sample_points, rays_d[idx], t_diff=max_time_diff)
 
-#def keypoints_loss(radiance_field: ZD_NeRFRadianceField, )
+def keypoints_loss(radiance_field: ZD_NeRFRadianceField, points: torch.Tensor, rays_d: torch.Tensor, n_samples=512, alpha=0.01):
+    # If alpha is greater than 0, you can sample the same set of keypoints more than once
+    if(alpha > 0.0):
+        torch.randint(0, len(points), n_samples, device=points.device)
