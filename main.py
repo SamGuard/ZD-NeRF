@@ -401,6 +401,7 @@ if __name__ == "__main__":
                 for i in [
                     1
                 ]:  # range(len(test_dataset)): #[int(t * num_time) % len(test_dataset)]:#
+                    #data = test_dataset[i]
                     data = test_dataset[i]
                     render_bkgd = data["color_bkgd"]
                     rays = data["rays"]
