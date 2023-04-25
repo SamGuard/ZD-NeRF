@@ -37,12 +37,7 @@ def new_model():
         ],
         gamma=0.33,
     )
-    occupancy_grid = OccupancyGrid(
-        roi_aabb=args.aabb,
-        resolution=grid_resolution,
-        contraction_type=contraction_type,
-    ).to(device)
-    return radiance_field, optimizer, scheduler, occupancy_grid
+    return radiance_field, optimizer, scheduler
 
 
 if __name__ == "__main__":
@@ -117,8 +112,6 @@ if __name__ == "__main__":
 
     render_n_samples = args.samples
     train_in_order = args.train_in_order
-    target_sample_batch_size = args.ray_batch_size
-    grid_resolution = 128
 
     # create output folders
     try:
@@ -149,10 +142,12 @@ if __name__ == "__main__":
     # setup the radiance field we want to train.
     max_steps = args.max_steps
     grad_scaler = torch.cuda.amp.GradScaler(1)
-    radiance_field, optimizer, scheduler, occupancy_grid = new_model()
+    radiance_field, optimizer, scheduler = new_model()
 
     # setup the dataset
     data_root_fp = "/home/ruilongli/data/dnerf/"
+    target_sample_batch_size = args.ray_batch_size
+    grid_resolution = 128
 
     train_dataset = SubjectLoader(
         subject_id=args.scene,
@@ -183,6 +178,12 @@ if __name__ == "__main__":
     test_dataset.camtoworlds = test_dataset.camtoworlds.to(device)
     test_dataset.K = test_dataset.K.to(device)
     test_dataset.timestamps = test_dataset.timestamps.to(device)
+
+    occupancy_grid = OccupancyGrid(
+        roi_aabb=args.aabb,
+        resolution=grid_resolution,
+        contraction_type=contraction_type,
+    ).to(device)
 
     # training
     step = 0
@@ -222,7 +223,7 @@ if __name__ == "__main__":
                         x, timestamps, render_step_size
                     ),
                 )
-                print(rays.viewdirs.shape)
+
                 # render
                 rgb, acc, depth, n_rendering_samples = render_image(
                     radiance_field,
@@ -277,7 +278,7 @@ if __name__ == "__main__":
                 )
 
                 # TEMPORARY FIX, CHANGE min/max rays TO arg
-                num_rays = max(min(100000, num_rays), 5000)
+                num_rays = max(min(40000, num_rays), 5000)
                 train_dataset.update_num_rays(num_rays)
                 alive_ray_mask = acc.squeeze(-1) > 0
                 n_alive_rays = alive_ray_mask.long().sum()
@@ -287,9 +288,8 @@ if __name__ == "__main__":
                         del radiance_field
                         del optimizer
                         del scheduler
-                        del occupancy_grid
                         set_random_seed(int(time.time()))
-                        radiance_field, optimizer, scheduler,occupancy_grid = new_model()
+                        radiance_field, optimizer, scheduler = new_model()
                         attempts += 1
                         step = 0
                         print(
