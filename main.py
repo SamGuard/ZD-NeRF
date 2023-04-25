@@ -277,7 +277,7 @@ if __name__ == "__main__":
                 )
 
                 # TEMPORARY FIX, CHANGE min/max rays TO arg
-                num_rays = max(min(15000, num_rays), 5000)
+                num_rays = max(num_rays, 5000)
                 train_dataset.update_num_rays(num_rays)
                 alive_ray_mask = acc.squeeze(-1) > 0
                 n_alive_rays = alive_ray_mask.long().sum()
