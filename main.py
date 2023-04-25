@@ -281,7 +281,7 @@ if __name__ == "__main__":
                 num_rays = max(min(40000, num_rays), 5000)
                 train_dataset.update_num_rays(num_rays)
                 if(step < 100):
-                    alive_ray_mask = torch.linspace(0, len(acc) - 1, len(acc), dtype=torch.int32)
+                    alive_ray_mask = torch.linspace(0, len(acc) - 1, len(acc), dtype=torch.long)
                     n_alive_rays = len(acc)
                 else:
                     alive_ray_mask = acc.squeeze(-1) > 0
