@@ -283,7 +283,6 @@ if __name__ == "__main__":
                 if(step < 100):
                     alive_ray_mask = torch.linspace(0, len(acc) - 1, len(acc), dtype=torch.long)
                     n_alive_rays = len(acc)
-                    print(acc)
                 else:
                     print(acc)
                     alive_ray_mask = acc.squeeze(-1) > 0
@@ -309,6 +308,7 @@ if __name__ == "__main__":
 
                 if n_alive_rays > 0:
                     # compute loss
+                    print(pixels)
                     loss_nerf = F.smooth_l1_loss(
                         rgb[alive_ray_mask], pixels[alive_ray_mask], beta=0.05
                     )
