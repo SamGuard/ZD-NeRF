@@ -242,8 +242,7 @@ if __name__ == "__main__":
                     timestamps=timestamps,
                 )
                 if (
-                    has_keypoints
-                    and step >= flow_field_start_step
+                    step >= flow_field_start_step
                     and 0 == (step - flow_field_start_step) % flow_field_n_steps
                 ):
                     (
