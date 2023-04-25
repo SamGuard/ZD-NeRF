@@ -284,6 +284,7 @@ if __name__ == "__main__":
                     alive_ray_mask = torch.linspace(0, len(acc) - 1, len(acc), dtype=torch.long)
                     n_alive_rays = len(acc)
                 else:
+                    print(acc)
                     alive_ray_mask = acc.squeeze(-1) > 0
                     n_alive_rays = alive_ray_mask.long().sum()
 
