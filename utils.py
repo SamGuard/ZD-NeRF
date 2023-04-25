@@ -13,7 +13,7 @@ from nerfacc import OccupancyGrid, ray_marching, rendering
 
 from mlp import ZD_NeRFRadianceField
 
-MAX_CHUNK_SIZE = 300000
+MAX_CHUNK_SIZE = 30000
 
 
 def set_random_seed(seed):
