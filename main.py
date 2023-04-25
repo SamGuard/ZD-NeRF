@@ -283,6 +283,7 @@ if __name__ == "__main__":
                 if(step < 100):
                     alive_ray_mask = torch.linspace(0, len(acc) - 1, len(acc), dtype=torch.long)
                     n_alive_rays = len(acc)
+                    print(acc)
                 else:
                     print(acc)
                     alive_ray_mask = acc.squeeze(-1) > 0
