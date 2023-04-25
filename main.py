@@ -161,6 +161,7 @@ if __name__ == "__main__":
     train_dataset.K = train_dataset.K.to(device)
     train_dataset.timestamps = train_dataset.timestamps.to(device)
     has_keypoints = train_dataset.has_points
+    print(has_keypoints)
     if has_keypoints:
         train_dataset.points_time = train_dataset.points_time.to(device)
         train_dataset.points_data = train_dataset.points_data.to(device)
