@@ -13,8 +13,6 @@ from nerfacc import OccupancyGrid, ray_marching, rendering
 
 from mlp import ZD_NeRFRadianceField
 
-MAX_CHUNK_SIZE = 30000
-
 
 def set_random_seed(seed):
     random.seed(seed)
@@ -80,7 +78,7 @@ def render_image(
         return radiance_field(positions, t_dirs)
 
     results = []
-    chunk = MAX_CHUNK_SIZE if radiance_field.training else test_chunk_size
+    chunk = torch.iinfo(torch.int32).max if radiance_field.training else test_chunk_size
 
     for i in range(0, num_rays, chunk):
         chunk_rays = namedtuple_map(lambda r: r[i : i + chunk], rays)
@@ -97,7 +95,6 @@ def render_image(
             cone_angle=cone_angle,
             alpha_thre=alpha_thre,
         )
-        print(len(t_starts))
         if t_starts.shape[0] > 0:
             rgb, opacity, depth = rendering(
                 t_starts=t_starts,
