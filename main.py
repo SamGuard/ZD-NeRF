@@ -222,7 +222,7 @@ if __name__ == "__main__":
                         x, timestamps, render_step_size
                     ),
                 )
-
+                print(rays.viewdirs.shape)
                 # render
                 rgb, acc, depth, n_rendering_samples = render_image(
                     radiance_field,
