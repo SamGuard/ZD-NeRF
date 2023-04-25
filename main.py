@@ -237,7 +237,7 @@ if __name__ == "__main__":
                     render_bkgd=render_bkgd,
                     cone_angle=args.cone_angle,
                     # Temporary change as may be causing issues, to revert, change first value to 0.01
-                    alpha_thre=0.00 if step > 1000 else 0.00,
+                    alpha_thre=0.00 if step > 1000 else 0.01,
                     # dnerf options
                     timestamps=timestamps,
                 )
