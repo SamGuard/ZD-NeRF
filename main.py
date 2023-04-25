@@ -159,8 +159,10 @@ if __name__ == "__main__":
     train_dataset.camtoworlds = train_dataset.camtoworlds.to(device)
     train_dataset.K = train_dataset.K.to(device)
     train_dataset.timestamps = train_dataset.timestamps.to(device)
-    train_dataset.points_time = train_dataset.points_time.to(device)
-    train_dataset.points_data = train_dataset.points_data.to(device)
+    has_keypoints = train_dataset.has_points
+    if has_keypoints:
+        train_dataset.points_time = train_dataset.points_time.to(device)
+        train_dataset.points_data = train_dataset.points_data.to(device)
 
     test_dataset = SubjectLoader(
         subject_id=args.scene,
@@ -200,7 +202,7 @@ if __name__ == "__main__":
                     + data["timestamps"]
                 )
 
-                if step == flow_field_start_step:
+                if step == flow_field_start_step and has_keypoints:
                     # Decreased epochs for testing, revert once done
                     train_flow_field(
                         radiance_field.warp.odefunc,
@@ -236,7 +238,8 @@ if __name__ == "__main__":
                     timestamps=timestamps,
                 )
                 if (
-                    step >= flow_field_start_step
+                    has_keypoints
+                    and step >= flow_field_start_step
                     and 0 == (step - flow_field_start_step) % flow_field_n_steps
                 ):
                     start_keypoints, end_keypoints = enforce_structure(
@@ -270,7 +273,7 @@ if __name__ == "__main__":
                 alive_ray_mask = acc.squeeze(-1) > 0
                 n_alive_rays = alive_ray_mask.long().sum()
 
-                if n_alive_rays  == 0:
+                if n_alive_rays == 0:
                     if attempts < 200:
                         del radiance_field
                         del optimizer
@@ -288,13 +291,15 @@ if __name__ == "__main__":
                         print("No rays hit target, exiting")
                         exit(-1)
 
-                if(n_alive_rays > 0):
+                if n_alive_rays > 0:
                     # compute loss
                     loss_nerf = F.smooth_l1_loss(
                         rgb[alive_ray_mask], pixels[alive_ray_mask], beta=0.05
                     )
 
-                    loss = (1.0 if step < flow_field_start_step else 0.05) * loss_nerf + loss_nerf_flow
+                    loss = (
+                        1.0 if step < flow_field_start_step else 0.05
+                    ) * loss_nerf + loss_nerf_flow
                     optimizer.zero_grad()
                     # do not unscale it because we are using Adam.
                     grad_scaler.scale(loss).backward()
@@ -310,7 +315,7 @@ if __name__ == "__main__":
                         f"loss_flow={loss_nerf_flow:.5f} |",
                         f"alive_ray_mask={alive_ray_mask.long().sum():d} | "
                         f"n_rendering_samples={n_rendering_samples:d} |",
-                        f"n_flow_samples={n_flow_samples} |"
+                        f"n_flow_samples={n_flow_samples} |",
                     )
 
                 if step % 5000 == 0:
@@ -401,7 +406,7 @@ if __name__ == "__main__":
                 for i in [
                     0
                 ]:  # range(len(test_dataset)): #[int(t * num_time) % len(test_dataset)]:#
-                    #data = test_dataset[i]
+                    # data = test_dataset[i]
                     data = test_dataset[i]
                     render_bkgd = data["color_bkgd"]
                     rays = data["rays"]

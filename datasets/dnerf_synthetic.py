@@ -164,6 +164,10 @@ class SubjectLoader(torch.utils.data.Dataset):
         data = self.fetch_data(index)
         data = self.preprocess(data)
         return data
+    
+    @property
+    def has_points(self):
+        return self.points_data.shape[0] == 0
 
     def preprocess(self, data):
         """Process the fetched / cached data with randomness."""
