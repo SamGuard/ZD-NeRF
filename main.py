@@ -74,7 +74,7 @@ if __name__ == "__main__":
             "brick",
             "brick_v2",
             "bouncy",
-            "balls"
+            "balls",
         ],
         help="which scene to use",
     )
@@ -243,18 +243,25 @@ if __name__ == "__main__":
                     and step >= flow_field_start_step
                     and 0 == (step - flow_field_start_step) % flow_field_n_steps
                 ):
-                    start_keypoints, end_keypoints = enforce_structure(
+                    (
+                        start_keypoints_rgb,
+                        end_keypoints_rgb,
+                        start_keypoints_dense,
+                        end_keypoints_dense,
+                    ) = enforce_structure(
                         radiance_field=radiance_field,
                         rays_d=rays.viewdirs,
                         scene_aabb=scene_aabb,
-                        n_samples=2**16,
+                        n_samples=2**15,
                         max_time_diff=0.25,
                     )
 
                     loss_nerf_flow = F.smooth_l1_loss(
-                        start_keypoints, end_keypoints, beta=0.05
+                        start_keypoints_rgb, end_keypoints_rgb, beta=0.05
+                    ) + F.smooth_l1_loss(start_keypoints_dense, end_keypoints_dense)
+                    n_flow_samples = len(start_keypoints_rgb) + len(
+                        start_keypoints_dense
                     )
-                    n_flow_samples = len(start_keypoints)
                 else:
                     loss_nerf_flow = 0
                     n_flow_samples = 0

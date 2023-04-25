@@ -560,18 +560,22 @@ class ZD_NeRFRadianceField(nn.Module):
             size=(x.shape[0], 1), fill_value=t_end, device=x.device
         )
 
+        x_flow = self.warp(t_start, t_end, x)  # Warp point to new location
+
         init_rgb, _ = self.forward(
             x, t_start_expanded, dirs
         )  # RGB at the starting point
-        x_flow = self.warp(t_start, t_end, x)  # Warp point to new location
         end_rgb, _ = self.forward(
             x_flow, t_end_expanded, dirs
         )  # Sample what the nerf thinks the colour should be here
 
-        alive_mask = (
-            self.query_density(
-                x, torch.full(size=(x.shape[0], 1), fill_value=t_start, device=x.device)
-            ).squeeze(-1)
-            > 0
-        )
-        return init_rgb[alive_mask], end_rgb[alive_mask]
+        init_density = self.query_density(
+            x, torch.full(size=(x.shape[0], 1), fill_value=t_start, device=x.device)
+        ).squeeze(-1)
+        end_density = self.query_density(
+            x_flow,
+            torch.full(size=(x_flow.shape[0], 1), fill_value=t_start, device=x.device),
+        ).squeeze(-1)
+
+        alive_mask = init_density > 0
+        return init_rgb[alive_mask], end_rgb[alive_mask], init_density, end_density
