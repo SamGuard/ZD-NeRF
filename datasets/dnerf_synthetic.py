@@ -100,7 +100,8 @@ class SubjectLoader(torch.utils.data.Dataset):
         "world_deform_v2",
         "brick",
         "brick_v2",
-        "bouncy"
+        "bouncy",
+        "balls"
     ]
 
     WIDTH, HEIGHT = 800, 800

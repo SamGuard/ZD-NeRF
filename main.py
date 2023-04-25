@@ -74,6 +74,7 @@ if __name__ == "__main__":
             "brick",
             "brick_v2",
             "bouncy",
+            "balls"
         ],
         help="which scene to use",
     )
