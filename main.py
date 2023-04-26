@@ -274,15 +274,14 @@ if __name__ == "__main__":
                 n_alive_rays = alive_ray_mask.long().sum()
                 # dynamic batch size for rays to keep sample batch size constant.
                 num_rays = int(
-                    n_alive_rays
+                    train_dataset.num_rays
                     * (target_sample_batch_size / float(n_rendering_samples))
                 )
-                print(train_dataset.num_rays, target_sample_batch_size / float(n_rendering_samples))
 
                 # TEMPORARY FIX, CHANGE min/max rays TO arg
                 num_rays = min(40000, num_rays)
                 if step < 100:
-                    num_rays = max(num_rays, 1000)
+                    num_rays = max(num_rays, 2048)
                 train_dataset.update_num_rays(num_rays)
 
                 if n_alive_rays == 0:
