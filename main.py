@@ -269,18 +269,18 @@ if __name__ == "__main__":
 
                 if n_rendering_samples == 0:
                     continue
+                
 
+                alive_ray_mask = acc.squeeze(-1) > 0
+                n_alive_rays = alive_ray_mask.long().sum()
                 # dynamic batch size for rays to keep sample batch size constant.
-                num_rays = len(pixels)
                 num_rays = int(
-                    num_rays * (target_sample_batch_size / float(n_rendering_samples))
+                    n_alive_rays * (target_sample_batch_size / float(n_rendering_samples))
                 )
 
                 # TEMPORARY FIX, CHANGE min/max rays TO arg
                 num_rays = max(min(40000, num_rays), 5000)
                 train_dataset.update_num_rays(num_rays)
-                alive_ray_mask = acc.squeeze(-1) > 0
-                n_alive_rays = alive_ray_mask.long().sum()
 
                 if n_alive_rays == 0:
                     if attempts < 200:
