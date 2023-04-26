@@ -277,7 +277,7 @@ if __name__ == "__main__":
                 num_rays = int(
                     n_alive_rays * (target_sample_batch_size / float(n_rendering_samples))
                 )
-                print(target_sample_batch_size / float(n_rendering_samples)
+                print(target_sample_batch_size / float(n_rendering_samples))
 
                 # TEMPORARY FIX, CHANGE min/max rays TO arg
                 num_rays = max(min(40000, num_rays), 5000)
