@@ -37,7 +37,12 @@ def new_model():
         ],
         gamma=0.33,
     )
-    return radiance_field, optimizer, scheduler
+    occupancy_grid = OccupancyGrid(
+        roi_aabb=args.aabb,
+        resolution=grid_resolution,
+        contraction_type=contraction_type,
+    ).to(device)
+    return radiance_field, optimizer, scheduler, occupancy_grid
 
 
 if __name__ == "__main__":
@@ -113,6 +118,11 @@ if __name__ == "__main__":
     render_n_samples = args.samples
     train_in_order = args.train_in_order
 
+    # setup the dataset
+    data_root_fp = "/home/ruilongli/data/dnerf/"
+    target_sample_batch_size = args.ray_batch_size
+    grid_resolution = 128
+
     # create output folders
     try:
         os.mkdir("network_out")
@@ -142,12 +152,7 @@ if __name__ == "__main__":
     # setup the radiance field we want to train.
     max_steps = args.max_steps
     grad_scaler = torch.cuda.amp.GradScaler(1)
-    radiance_field, optimizer, scheduler = new_model()
-
-    # setup the dataset
-    data_root_fp = "/home/ruilongli/data/dnerf/"
-    target_sample_batch_size = args.ray_batch_size
-    grid_resolution = 128
+    radiance_field, optimizer, scheduler, occupancy_grid = new_model()
 
     train_dataset = SubjectLoader(
         subject_id=args.scene,
@@ -178,12 +183,6 @@ if __name__ == "__main__":
     test_dataset.camtoworlds = test_dataset.camtoworlds.to(device)
     test_dataset.K = test_dataset.K.to(device)
     test_dataset.timestamps = test_dataset.timestamps.to(device)
-
-    occupancy_grid = OccupancyGrid(
-        roi_aabb=args.aabb,
-        resolution=grid_resolution,
-        contraction_type=contraction_type,
-    ).to(device)
 
     # training
     step = 0
@@ -289,11 +288,17 @@ if __name__ == "__main__":
                         del radiance_field
                         del optimizer
                         del scheduler
+                        del occupancy_grid
                         train_dataset.update_num_rays(
                             target_sample_batch_size // render_n_samples
                         )
                         set_random_seed(int(time.time()))
-                        radiance_field, optimizer, scheduler = new_model()
+                        (
+                            radiance_field,
+                            optimizer,
+                            scheduler,
+                            occupancy_grid,
+                        ) = new_model()
                         attempts += 1
                         step = 0
                         print(
