@@ -279,7 +279,7 @@ if __name__ == "__main__":
                 # TEMPORARY FIX, CHANGE min/max rays TO arg
                 num_rays = max(min(40000, num_rays), 5000)
                 train_dataset.update_num_rays(num_rays)
-                if(step < 100):
+                if(step < 2000):
                     alive_ray_mask = torch.linspace(0, len(acc) - 1, len(acc), dtype=torch.long)
                     n_alive_rays = len(acc)
                 else:
