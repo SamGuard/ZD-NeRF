@@ -287,6 +287,7 @@ if __name__ == "__main__":
                         del radiance_field
                         del optimizer
                         del scheduler
+                        train_dataset.update_num_rays(target_sample_batch_size // render_n_samples)
                         set_random_seed(int(time.time()))
                         radiance_field, optimizer, scheduler = new_model()
                         attempts += 1
