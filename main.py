@@ -147,7 +147,7 @@ if __name__ == "__main__":
     # setup the dataset
     data_root_fp = "/home/ruilongli/data/dnerf/"
     target_sample_batch_size = args.ray_batch_size
-    grid_resolution = 128
+    grid_resolution = 32
 
     train_dataset = SubjectLoader(
         subject_id=args.scene,
@@ -279,13 +279,8 @@ if __name__ == "__main__":
                 # TEMPORARY FIX, CHANGE min/max rays TO arg
                 num_rays = max(min(40000, num_rays), 5000)
                 train_dataset.update_num_rays(num_rays)
-                if(step < 2000):
-                    alive_ray_mask = torch.linspace(0, len(acc) - 1, len(acc), dtype=torch.long)
-                    n_alive_rays = len(acc)
-                else:
-                    print(acc)
-                    alive_ray_mask = acc.squeeze(-1) > 0
-                    n_alive_rays = alive_ray_mask.long().sum()
+                alive_ray_mask = acc.squeeze(-1) > 0
+                n_alive_rays = alive_ray_mask.long().sum()
 
                 if n_alive_rays == 0:
                     if attempts < 200:
