@@ -131,7 +131,7 @@ if __name__ == "__main__":
 
     try:
         os.stat("/mnt/io/")
-        RENDER_PATH = "/mnt/io/test_dump"  # "/mnt/io/render_out"
+        RENDER_PATH = "/mnt/io/render_out"
     except:
         RENDER_PATH = "./render_out"
 
@@ -288,7 +288,7 @@ if __name__ == "__main__":
                 )
 
                 # TEMPORARY FIX, CHANGE min/max rays TO arg
-                num_rays = min(16384, num_rays)
+                num_rays = min(8192, num_rays)
                 if step < 100:
                     num_rays = max(num_rays, 2048)
                     num_rays = min(4096, num_rays)
@@ -354,7 +354,7 @@ if __name__ == "__main__":
                             "/",
                             "mnt",
                             "io",
-                            "test_dump",  # "train_out",
+                            "train_out",  # "train_out",
                             "zdnerf_nerf_step" + str(step) + ".pt",
                         ),
                     )
