@@ -147,7 +147,7 @@ if __name__ == "__main__":
     # setup the dataset
     data_root_fp = "/home/ruilongli/data/dnerf/"
     target_sample_batch_size = args.ray_batch_size
-    grid_resolution = 256
+    grid_resolution = 128
 
     train_dataset = SubjectLoader(
         subject_id=args.scene,
