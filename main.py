@@ -215,7 +215,7 @@ if __name__ == "__main__":
                         epochs=1000,
                         steps_ahead=5,
                     )
-
+                print(timestamps)
                 # update occupancy grid
                 occupancy_grid.every_n_step(
                     step=step,
