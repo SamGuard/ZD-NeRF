@@ -414,7 +414,7 @@ if __name__ == "__main__":
     else:
         radiance_field = ZD_NeRFRadianceField().to(device)
         radiance_field.load_state_dict(
-            torch.load(os.path.join("/", "mnt", "io", "train_out", args.model), device)
+            torch.load(os.path.join("/", "mnt", "io", "test_dump", args.model), device)
         )
         train_dataset.training = False
 
