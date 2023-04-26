@@ -236,7 +236,6 @@ if __name__ == "__main__":
                     render_step_size=render_step_size,
                     render_bkgd=render_bkgd,
                     cone_angle=args.cone_angle,
-                    # Temporary change as may be causing issues, to revert, change first value to 0.01
                     alpha_thre=0.01 if step > 1000 else 0.00,
                     # dnerf options
                     timestamps=timestamps,
@@ -308,7 +307,6 @@ if __name__ == "__main__":
 
                 if n_alive_rays > 0:
                     # compute loss
-                    print(pixels)
                     loss_nerf = F.smooth_l1_loss(
                         rgb[alive_ray_mask], pixels[alive_ray_mask], beta=0.05
                     )
