@@ -168,6 +168,9 @@ def sample_specular(
     
     return radiance_field.sample_spec(sample_points, sample_times, rays_d[idx])
 
+def flow_loss_func(target: torch.Tensor, pred:torch.Tensor, alpha=10)-> torch.Tensor:
+    return ((alpha*(target - pred))**2).mean()
+
 
 """
 Small Expirement, not actually used

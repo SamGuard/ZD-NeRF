@@ -15,7 +15,13 @@ import torch.nn.functional as F
 import tqdm
 from datasets.dnerf_synthetic import SubjectLoader
 from mlp import ZD_NeRFRadianceField
-from utils import render_image, set_random_seed, enforce_structure, sample_specular
+from utils import (
+    render_image,
+    set_random_seed,
+    enforce_structure,
+    sample_specular,
+    flow_loss_func,
+)
 from flow_trainer import train_flow_field
 
 from nerfacc import ContractionType, OccupancyGrid
@@ -26,9 +32,9 @@ from torch.profiler import profile, record_function, ProfilerActivity
 
 def new_model():
     radiance_field = ZD_NeRFRadianceField().to(device)
-    optimizer = torch.optim.Adam(radiance_field.parameters(), lr=5e-4)
+    optim = torch.optim.Adam(radiance_field.parameters(), lr=5e-4)
     scheduler = torch.optim.lr_scheduler.MultiStepLR(
-        optimizer,
+        optim,
         milestones=[
             max_steps // 2,
             max_steps * 3 // 4,
@@ -37,12 +43,13 @@ def new_model():
         ],
         gamma=0.33,
     )
+    flow_opt = torch.optim.Adam(radiance_field.parameters(), lr=1e-5)
     occupancy_grid = OccupancyGrid(
         roi_aabb=args.aabb,
         resolution=grid_resolution,
         contraction_type=contraction_type,
     ).to(device)
-    return radiance_field, optimizer, scheduler, occupancy_grid
+    return radiance_field, optim, scheduler, occupancy_grid
 
 
 if __name__ == "__main__":
@@ -262,14 +269,13 @@ if __name__ == "__main__":
                         n_samples=2**14,
                     )
 
-                    loss_nerf_flow = F.smooth_l1_loss(
+                    loss_nerf_flow = flow_loss_func(
                         start_keypoints_rgb, end_keypoints_rgb
-                    ) + F.smooth_l1_loss(start_keypoints_dense, end_keypoints_dense)
+                    ) + flow_loss_func(start_keypoints_dense, end_keypoints_dense)
+
                     n_flow_samples = len(start_keypoints_rgb) + len(
                         start_keypoints_dense
                     )
-                    loss_nerf_flow = 100 * loss_nerf_flow
-
                     loss_spec = F.mse_loss(spec_samples, torch.zeros_like(spec_samples))
                 else:
                     loss_nerf_flow = 0
