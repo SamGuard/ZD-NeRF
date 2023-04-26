@@ -250,7 +250,6 @@ if __name__ == "__main__":
                         end_keypoints_dense,
                     ) = enforce_structure(
                         radiance_field=radiance_field,
-                        rays_d=rays.viewdirs,
                         scene_aabb=scene_aabb,
                         n_samples=2**15,
                         max_time_diff=0.25,
