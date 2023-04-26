@@ -205,7 +205,6 @@ if __name__ == "__main__":
                     torch.zeros(size=(pixels.shape[0], 1), device="cuda:0")
                     + data["timestamps"]
                 )
-                print(rays.viewdirs)
 
                 if step == flow_field_start_step and has_keypoints:
                     # Decreased epochs for testing, revert once done
