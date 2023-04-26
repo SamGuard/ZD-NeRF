@@ -531,6 +531,7 @@ class ZD_NeRFRadianceField(nn.Module):
         self.nerf = TimeNeRFRadianceField()
 
     def query_opacity(self, x, timestamps, step_size):
+        print(timestamps)
         idxs = torch.randint(0, len(timestamps), (x.shape[0],), device=x.device)
         t = timestamps[idxs]
         density = self.query_density(x, t)
