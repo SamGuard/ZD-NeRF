@@ -205,6 +205,7 @@ if __name__ == "__main__":
                     torch.zeros(size=(pixels.shape[0], 1), device="cuda:0")
                     + data["timestamps"]
                 )
+                print(data["timestamps"])
 
                 if step == flow_field_start_step and has_keypoints:
                     # Decreased epochs for testing, revert once done
@@ -215,7 +216,7 @@ if __name__ == "__main__":
                         epochs=1000,
                         steps_ahead=5,
                     )
-                print(timestamps)
+
                 # update occupancy grid
                 occupancy_grid.every_n_step(
                     step=step,
