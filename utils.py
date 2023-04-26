@@ -128,7 +128,6 @@ def render_image(
 
 def enforce_structure(
     radiance_field: ZD_NeRFRadianceField,
-    rays_d: torch.Tensor,
     scene_aabb: torch.Tensor,
     n_samples: int,
     max_time_diff=0.01,
@@ -143,17 +142,62 @@ def enforce_structure(
     sample_points = (
         torch.rand(size=(n_samples, 3), device=device) * aabb_size + scene_aabb[:3]
     )
+    return radiance_field.flow_field_pred(
+        sample_points, t_diff=max_time_diff
+    )
 
+
+def sample_specular(
+    radiance_field: ZD_NeRFRadianceField,
+    scene_aabb: torch.Tensor,
+    rays_d: torch.Tensor,
+    n_samples: int,
+    device="cuda:0",
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    """
+    Sample specular nerf so that its magnitude can be reduced
+    """
+    aabb_size = torch.abs((scene_aabb[3:] - scene_aabb[:3]))
+    sample_points = (
+        torch.rand(size=(n_samples, 3), device=device) * aabb_size + scene_aabb[:3]
+    )
     # Get random view dirs to use when rendering the points
-    idx = torch.randint(0, len(rays_d), (n_samples,))
+    idx = torch.randint(0, len(rays_d), (n_samples,), device=device)
 
-    return radiance_field.flow_field_pred(sample_points, rays_d[idx], t_diff=max_time_diff)
+    sample_times = torch.rand(size=(n_samples, 1), device=device)
+    
+    return radiance_field.sample_spec(sample_points, sample_times, rays_d[idx])
 
-def keypoints_loss(radiance_field: ZD_NeRFRadianceField, points: torch.Tensor, rays_d: torch.Tensor, n_samples=512, alpha=0.01):
+
+"""
+Small Expirement, not actually used
+def keypoints_loss(
+    radiance_field: ZD_NeRFRadianceField,
+    points: torch.Tensor,
+    rays_d: torch.Tensor,
+    n_samples=512,
+    alpha=0.01,
+):
+    n_times = int(points.shape[0])
+    n_points = int(points.shape[1])
     # If alpha is greater than 0, you can sample the same set of keypoints more than once
-    if(alpha > 0.0):
-        torch.randint(0, len(points), n_samples, device=points.device)
+    if alpha > 0.0:
+        id_t = torch.randint(0, n_times - 1, (n_samples,), device=points.device)
+        id_p = torch.randint(0, n_points, (n_samples,), device=points.device)
     else:
         raise NotImplemented("Need to implement for when alpha is 0")
     
-    
+    reverse = random.random() > 0.5
+    # Samples from the data set at time t
+    samples_t_0 = points[id_t, id_p]
+    noise = (torch.rand_like(samples_t_0) - 0.5) * alpha
+    samples_t_0 += noise
+
+    # Samples at t plus one 
+    id_next_t = id_t + (-1 if reverse else 1)
+    samples_t_1 = points[id_next_t, id_p] + noise
+
+    rays_ids = torch.randint(0, len(rays_d), (n_samples,))
+    dirs = rays_d.reshape(-1, 3)[rays_ids]
+    return radiance_field(samples_t_0, id_t.unsqueeze(1), dirs)[0],radiance_field(samples_t_1, id_next_t.unsqueeze(1), dirs)[0]
+"""

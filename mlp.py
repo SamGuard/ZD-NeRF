@@ -268,6 +268,7 @@ class TimeNeRFRadianceField(nn.Module):
         skip_layer: int = 4,  # The layer to add skip layers to.
         net_depth_condition: int = 1,  # The depth of the second part of MLP.
         net_width_condition: int = 128,  # The width of the second part of MLP.
+        use_views=True,
     ) -> None:
         super().__init__()
         # self.posi_encoder = SinusoidalEncoder(4, 0, 10, True)
@@ -276,7 +277,7 @@ class TimeNeRFRadianceField(nn.Module):
         self.view_encoder = IdentityEncoder(3)
         self.mlp = NerfMLP(
             input_dim=self.posi_encoder.latent_dim,
-            condition_dim=self.view_encoder.latent_dim,
+            condition_dim=self.view_encoder.latent_dim if use_views else 0,
             net_depth=net_depth,
             net_width=net_width,
             skip_layer=skip_layer,
@@ -528,7 +529,8 @@ class ZD_NeRFRadianceField(nn.Module):
         # self.warp = ODEBlock_Forward(NeuralField(4, 3, 32, 6))
         # self.warp = ODEBlock_torchdiffeq(CurlField(NeuralNet))
         self.warp = ODEBlock_Forward(DivergenceFreeNeuralField(3, 1, 16, 6))
-        self.nerf = TimeNeRFRadianceField()
+        self.nerf_diffuse = TimeNeRFRadianceField(use_views=False)
+        self.nerf_spec = TimeNeRFRadianceField(net_depth=5, net_width=64)
 
     def query_opacity(self, x, timestamps, step_size):
         idxs = torch.randint(0, len(timestamps), (x.shape[0],), device=x.device)
@@ -541,14 +543,15 @@ class ZD_NeRFRadianceField(nn.Module):
 
     def query_density(self, x, t):
         # x = self.warp(t.flatten(), x)
-        return self.nerf.query_density(x, t)
+        return self.nerf_diffuse.query_density(x, t)
 
     def forward(self, x, t, condition=None):
-        out = self.nerf(x, t, condition=condition)
-        return out
+        rgb_diff, sigma = self.nerf_diffuse(x, t, condition=None)
+        rgb_spec, _ = self.nerf_spec(x, t, condition)
+        return rgb_diff + rgb_spec, sigma
 
     def flow_field_pred(
-        self, x: torch.Tensor, dirs: torch.Tensor, t_diff=0.01
+        self, x: torch.Tensor, t_diff=0.01
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         t_start = torch.rand(1, device=x.device)[0]
         t_end = t_start + torch.rand(1, device=x.device)[0] * t_diff * 2 - t_diff
@@ -562,11 +565,13 @@ class ZD_NeRFRadianceField(nn.Module):
 
         x_flow = self.warp(t_start, t_end, x)  # Warp point to new location
 
-        init_rgb, _ = self.forward(
-            x, t_start_expanded, dirs
+        init_rgb, _ = self.nerf_diffuse(
+            x,
+            t_start_expanded,
         )  # RGB at the starting point
-        end_rgb, _ = self.forward(
-            x_flow, t_end_expanded, dirs
+        end_rgb, _ = self.nerf_diffuse(
+            x_flow,
+            t_end_expanded,
         )  # Sample what the nerf thinks the colour should be here
 
         init_density = self.query_density(
@@ -579,3 +584,9 @@ class ZD_NeRFRadianceField(nn.Module):
 
         alive_mask = init_density > 0
         return init_rgb[alive_mask], end_rgb[alive_mask], init_density, end_density
+
+    def sample_spec(self, x: torch.Tensor, t: torch.Tensor, dirs: torch.Tensor):
+        """
+        Randomly sample specular. x: list of points, t: list of times, dirs: list of view angles
+        """
+        return self.nerf_spec(x, t, condition=dirs)[0]

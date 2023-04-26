@@ -15,7 +15,7 @@ import torch.nn.functional as F
 import tqdm
 from datasets.dnerf_synthetic import SubjectLoader
 from mlp import ZD_NeRFRadianceField
-from utils import render_image, set_random_seed, enforce_structure
+from utils import render_image, set_random_seed, enforce_structure, sample_specular
 from flow_trainer import train_flow_field
 
 from nerfacc import ContractionType, OccupancyGrid
@@ -131,7 +131,7 @@ if __name__ == "__main__":
 
     try:
         os.stat("/mnt/io/")
-        RENDER_PATH = "/mnt/io/render_out"
+        RENDER_PATH = "/mnt/io/test_dump" # "/mnt/io/render_out"
     except:
         RENDER_PATH = "./render_out"
 
@@ -256,14 +256,24 @@ if __name__ == "__main__":
                         max_time_diff=0.25,
                     )
 
+                    spec_samples = sample_specular(
+                        radiance_field=radiance_field,
+                        scene_aabb=scene_aabb,
+                        rays_d=rays.viewdirs,
+                        n_samples=2**14,
+                    )
+
                     loss_nerf_flow = F.smooth_l1_loss(
                         start_keypoints_rgb, end_keypoints_rgb, beta=0.05
                     ) + F.smooth_l1_loss(start_keypoints_dense, end_keypoints_dense)
                     n_flow_samples = len(start_keypoints_rgb) + len(
                         start_keypoints_dense
                     )
+
+                    loss_spec = F.mse_loss(spec_samples, torch.zeros_like(spec_samples))
                 else:
                     loss_nerf_flow = 0
+                    loss_spec = 0
                     n_flow_samples = 0
 
                 if n_rendering_samples == 0:
@@ -318,7 +328,7 @@ if __name__ == "__main__":
 
                     loss = (
                         1.0 if step < flow_field_start_step else 0.05
-                    ) * loss_nerf + loss_nerf_flow
+                    ) * loss_nerf + loss_nerf_flow + loss_spec
                     optimizer.zero_grad()
                     # do not unscale it because we are using Adam.
                     grad_scaler.scale(loss).backward()
@@ -329,12 +339,13 @@ if __name__ == "__main__":
                     elapsed_time = time.time() - tic
                     loss = F.mse_loss(rgb[alive_ray_mask], pixels[alive_ray_mask])
                     print(
-                        f"elapsed_time={elapsed_time:.2f}s | step={step} | "
+                        f"time={elapsed_time:.2f}s | step={step} | "
                         f"loss_nerf={loss_nerf:.5f} | ",
                         f"loss_flow={loss_nerf_flow:.5f} |",
-                        f"alive_ray_mask={alive_ray_mask.long().sum():d} | "
-                        f"n_rendering_samples={n_rendering_samples:d} |",
-                        f"n_flow_samples={n_flow_samples} |",
+                        f"loss_spec={loss_spec:.5f} |"
+                        f"alive={alive_ray_mask.long().sum():d} | "
+                        f"n_samples={n_rendering_samples:d} |",
+                        f"n_flow={n_flow_samples} |",
                     )
 
                 if step % 5000 == 0:
@@ -344,7 +355,7 @@ if __name__ == "__main__":
                             "/",
                             "mnt",
                             "io",
-                            "train_out",
+                            "test_dump",#"train_out",
                             "zdnerf_nerf_step" + str(step) + ".pt",
                         ),
                     )
