@@ -282,7 +282,7 @@ if __name__ == "__main__":
                 # TEMPORARY FIX, CHANGE min/max rays TO arg
                 num_rays = min(40000, num_rays)
                 if step < 100:
-                    num_rays = max(num_rays, 10000)
+                    num_rays = max(num_rays, 1000)
                 train_dataset.update_num_rays(num_rays)
 
                 if n_alive_rays == 0:
