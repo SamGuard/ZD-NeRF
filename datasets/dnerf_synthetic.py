@@ -217,7 +217,7 @@ class SubjectLoader(torch.utils.data.Dataset):
             y = torch.randint(
                 0, self.HEIGHT, size=(num_rays,), device=self.images.device
             )
-            print(x.shape, y.shape)
+            print(x, y, num_rays)
         else:
             image_id = [index]
             x, y = torch.meshgrid(
