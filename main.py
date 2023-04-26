@@ -277,7 +277,7 @@ if __name__ == "__main__":
                     n_alive_rays
                     * (target_sample_batch_size / float(n_rendering_samples))
                 )
-                print(train_dataset.num_rays)
+                print(train_dataset.num_rays, target_sample_batch_size / float(n_rendering_samples))
 
                 # TEMPORARY FIX, CHANGE min/max rays TO arg
                 num_rays = min(40000, num_rays)
