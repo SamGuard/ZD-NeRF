@@ -269,18 +269,20 @@ if __name__ == "__main__":
 
                 if n_rendering_samples == 0:
                     continue
-                
 
                 alive_ray_mask = acc.squeeze(-1) > 0
                 n_alive_rays = alive_ray_mask.long().sum()
                 # dynamic batch size for rays to keep sample batch size constant.
                 num_rays = int(
-                    n_alive_rays * (target_sample_batch_size / float(n_rendering_samples))
+                    n_alive_rays
+                    * (target_sample_batch_size / float(n_rendering_samples))
                 )
                 print(train_dataset.num_rays)
 
                 # TEMPORARY FIX, CHANGE min/max rays TO arg
-                num_rays = max(min(40000, num_rays), 0)
+                num_rays = min(40000, num_rays)
+                if step < 100:
+                    max(num_rays, 10000)
                 train_dataset.update_num_rays(num_rays)
 
                 if n_alive_rays == 0:
@@ -288,7 +290,9 @@ if __name__ == "__main__":
                         del radiance_field
                         del optimizer
                         del scheduler
-                        train_dataset.update_num_rays(target_sample_batch_size // render_n_samples)
+                        train_dataset.update_num_rays(
+                            target_sample_batch_size // render_n_samples
+                        )
                         set_random_seed(int(time.time()))
                         radiance_field, optimizer, scheduler = new_model()
                         attempts += 1
