@@ -285,7 +285,7 @@ if __name__ == "__main__":
                 train_dataset.update_num_rays(num_rays)
 
                 if n_alive_rays == 0:
-                    if attempts < 200:
+                    if attempts < 10000:
                         del radiance_field
                         del optimizer
                         del scheduler
