@@ -546,7 +546,7 @@ class ZD_NeRFRadianceField(nn.Module):
         return self.nerf_diffuse.query_density(x, t)
 
     def forward(self, x, t, condition=None):
-        rgb_diff, sigma = self.nerf_diffuse(x, t, condition=condition)
+        rgb_diff, sigma = self.nerf_diffuse(x, t, condition=None)
         #rgb_spec, _ = self.nerf_spec(x, t, condition)
         return rgb_diff, sigma
         return rgb_diff + rgb_spec, sigma
@@ -583,8 +583,7 @@ class ZD_NeRFRadianceField(nn.Module):
             torch.full(size=(x_flow.shape[0], 1), fill_value=t_start, device=x.device),
         ).squeeze(-1)
 
-        alive_mask = init_density > 0
-        return init_rgb[alive_mask], end_rgb[alive_mask], init_density, end_density
+        return init_rgb, end_rgb, init_density, end_density
 
     def sample_spec(self, x: torch.Tensor, t: torch.Tensor, dirs: torch.Tensor):
         """
