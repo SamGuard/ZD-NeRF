@@ -548,6 +548,7 @@ class ZD_NeRFRadianceField(nn.Module):
     def forward(self, x, t, condition=None):
         rgb_diff, sigma = self.nerf_diffuse(x, t, condition=None)
         rgb_spec, _ = self.nerf_spec(x, t, condition)
+        return rgb_diff, sigma
         return rgb_diff + rgb_spec, sigma
 
     def flow_field_pred(
