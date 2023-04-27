@@ -270,8 +270,8 @@ if __name__ == "__main__":
                     )
 
                     loss_nerf_flow = flow_loss_func(
-                        start_keypoints_rgb, end_keypoints_rgb
-                    ) + flow_loss_func(start_keypoints_dense, end_keypoints_dense)
+                        start_keypoints_rgb, end_keypoints_rgb, 1
+                    ) + flow_loss_func(start_keypoints_dense, end_keypoints_dense, 1)
 
                     n_flow_samples = len(start_keypoints_rgb) + len(
                         start_keypoints_dense
