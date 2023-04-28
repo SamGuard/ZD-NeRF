@@ -55,6 +55,7 @@ def new_model():
             torch.load(os.path.join("/", "mnt", "io", "train_out", args.model), device)
         )
     radiance_field.train()
+    occupancy_grid.train()
     return radiance_field, optim, scheduler, occupancy_grid
 
 
