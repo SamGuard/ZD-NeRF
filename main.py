@@ -149,8 +149,8 @@ if __name__ == "__main__":
 
     # setup the scene bounding box.
     scene_aabb = torch.tensor(args.aabb, dtype=torch.float32, device=device)
-    near_plane = None
-    far_plane = None
+    near_plane = 0.0
+    far_plane = 1e10
     render_step_size = (
         (scene_aabb[3:] - scene_aabb[:3]).max() * math.sqrt(3) / render_n_samples
     ).item()
