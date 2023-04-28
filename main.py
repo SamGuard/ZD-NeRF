@@ -24,7 +24,8 @@ from utils import (
 )
 from flow_trainer import train_flow_field
 
-from nerfacc import ContractionType, OccupancyGrid
+from nerfacc.estimators.occ_grid import OccGridEstimator as OccupancyGrid
+
 
 # For testing
 from torch.profiler import profile, record_function, ProfilerActivity
@@ -43,11 +44,10 @@ def new_model():
         ],
         gamma=0.33,
     )
-    flow_opt = torch.optim.Adam(radiance_field.parameters(), lr=1e-5)
+    
     occupancy_grid = OccupancyGrid(
         roi_aabb=args.aabb,
         resolution=grid_resolution,
-        contraction_type=contraction_type,
     ).to(device)
     return radiance_field, optim, scheduler, occupancy_grid
 
