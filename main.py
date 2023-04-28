@@ -56,6 +56,7 @@ def new_model():
         )
     radiance_field.train()
     occupancy_grid.train()
+    test_dataset.update_num_rays(1024)
     return radiance_field, optim, scheduler, occupancy_grid
 
 
@@ -200,6 +201,7 @@ if __name__ == "__main__":
     # training
     step = 0
     attempts = 0
+    no_samples_count = 0
     tic = time.time()
     flow_field_start_step = args.flow_step
     flow_field_n_steps = 1
@@ -252,6 +254,10 @@ if __name__ == "__main__":
                     # dnerf options
                     timestamps=timestamps,
                 )
+                alive_ray_mask = acc.squeeze(-1) > 0
+                n_alive_rays = alive_ray_mask.long().sum()
+
+
                 if (
                     step >= flow_field_start_step
                     and 0 == (step - flow_field_start_step) % flow_field_n_steps
@@ -289,24 +295,12 @@ if __name__ == "__main__":
                     n_flow_samples = 0
 
                 if n_rendering_samples == 0:
+                    no_samples_count += 1
                     print("No samples")
-                    continue
-
-                alive_ray_mask = acc.squeeze(-1) > 0
-                n_alive_rays = alive_ray_mask.long().sum()
-                # dynamic batch size for rays to keep sample batch size constant.
-                num_rays = int(
-                    train_dataset.num_rays
-                    * (target_sample_batch_size / float(n_rendering_samples))
-                )
-
-                # TEMPORARY FIX, CHANGE min/max rays TO arg
-                num_rays = min(8192, num_rays)
-                if step < 100:
-                    num_rays = 1024
-                    #num_rays = max(num_rays, 2048)
-                    #num_rays = min(4096, num_rays)
-                train_dataset.update_num_rays(num_rays)
+                    if no_samples_count < 10:
+                        continue
+                else:
+                    no_samples_count *= 0.99
 
                 if n_alive_rays == 0:
                     if attempts < 10000:
@@ -325,6 +319,7 @@ if __name__ == "__main__":
                             occupancy_grid,
                         ) = new_model()
                         attempts += 1
+                        no_samples_count = 0
                         step = 0
                         print(
                             "Model to failed to not keep enough rays alive, reseting. Attempt number:",
@@ -335,20 +330,33 @@ if __name__ == "__main__":
                         print("No rays hit target, exiting")
                         exit(-1)
 
-                if n_alive_rays > 0:
-                    # compute loss
-                    loss_nerf = F.smooth_l1_loss(
-                        rgb[alive_ray_mask], pixels[alive_ray_mask], beta=0.05
-                    )
+                # dynamic batch size for rays to keep sample batch size constant.
+                num_rays = int(
+                    train_dataset.num_rays
+                    * (target_sample_batch_size / float(n_rendering_samples))
+                )
 
-                    loss = loss_nerf + loss_nerf_flow + loss_spec
-                    optimizer.zero_grad()
-                    # do not unscale it because we are using Adam.
-                    grad_scaler.scale(loss).backward()
-                    optimizer.step()
-                    scheduler.step()
+                # TEMPORARY FIX, CHANGE min/max rays TO arg
+                num_rays = min(8192, num_rays)
+                if step < 100:
+                    num_rays = 1024
+                    #num_rays = max(num_rays, 2048)
+                    #num_rays = min(4096, num_rays)
+                train_dataset.update_num_rays(num_rays)
 
-                if step % 1 == 0 and n_alive_rays > 0:
+                # compute loss
+                loss_nerf = F.smooth_l1_loss(
+                    rgb[alive_ray_mask], pixels[alive_ray_mask], beta=0.05
+                )
+
+                loss = loss_nerf + loss_nerf_flow + loss_spec
+                optimizer.zero_grad()
+                # do not unscale it because we are using Adam.
+                grad_scaler.scale(loss).backward()
+                optimizer.step()
+                scheduler.step()
+
+                if step % 1 == 0:
                     elapsed_time = time.time() - tic
                     loss = F.mse_loss(rgb[alive_ray_mask], pixels[alive_ray_mask])
                     print(
