@@ -44,7 +44,7 @@ def new_model():
         ],
         gamma=0.33,
     )
-    
+
     occupancy_grid = OccupancyGrid(
         roi_aabb=args.aabb,
         resolution=grid_resolution,
@@ -222,7 +222,7 @@ if __name__ == "__main__":
                     )
 
                 # update occupancy grid
-                occupancy_grid.every_n_step(
+                occupancy_grid.update_every_n_steps(
                     step=step,
                     occ_eval_fn=lambda x: radiance_field.query_opacity(
                         x, timestamps, render_step_size
@@ -234,7 +234,6 @@ if __name__ == "__main__":
                     radiance_field,
                     occupancy_grid,
                     rays,
-                    scene_aabb,
                     # rendering options
                     near_plane=near_plane,
                     far_plane=far_plane,
@@ -382,7 +381,6 @@ if __name__ == "__main__":
                                 radiance_field,
                                 occupancy_grid,
                                 rays,
-                                scene_aabb,
                                 # rendering options
                                 near_plane=None,
                                 far_plane=None,
@@ -453,21 +451,12 @@ if __name__ == "__main__":
                             x, timestamps, render_step_size
                         ),
                     )
-                    """
-                    occupancy_grid.every_n_step(
-                        step=step,
-                        occ_eval_fn=lambda x: radiance_field.query_opacity(
-                            x, timestamps, render_step_size
-                        ),
-                    )
-                    """
 
                     # rendering
                     rgb, acc, depth, _ = render_image(
                         radiance_field,
                         occupancy_grid,
                         rays,
-                        scene_aabb,
                         # rendering options
                         near_plane=None,
                         far_plane=None,

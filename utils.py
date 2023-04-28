@@ -10,7 +10,7 @@ import torch
 from datasets.utils import Rays, namedtuple_map
 
 from nerfacc.estimators.occ_grid import OccGridEstimator as OccupancyGrid
-from nerfacc import rendering
+from nerfacc.volrend import rendering
 
 from mlp import ZD_NeRFRadianceField
 
@@ -24,9 +24,8 @@ def set_random_seed(seed):
 def render_image(
     # scene
     radiance_field: torch.nn.Module,
-    occupancy_grid: OccupancyGrid,
+    estimator: OccupancyGrid,
     rays: Rays,
-    scene_aabb: torch.Tensor,
     # rendering options
     near_plane: Optional[float] = None,
     far_plane: Optional[float] = None,
