@@ -163,11 +163,6 @@ if __name__ == "__main__":
         (scene_aabb[3:] - scene_aabb[:3]).max() * math.sqrt(3) / render_n_samples
     ).item()
 
-    # setup the radiance field we want to train.
-    max_steps = args.max_steps
-    grad_scaler = torch.cuda.amp.GradScaler(1)
-    radiance_field, optimizer, scheduler, occupancy_grid = new_model()
-
     train_dataset = SubjectLoader(
         subject_id=args.scene,
         root_fp=data_root_fp,
@@ -197,6 +192,11 @@ if __name__ == "__main__":
     test_dataset.camtoworlds = test_dataset.camtoworlds.to(device)
     test_dataset.K = test_dataset.K.to(device)
     test_dataset.timestamps = test_dataset.timestamps.to(device)
+
+    # setup the radiance field we want to train.
+    max_steps = args.max_steps
+    grad_scaler = torch.cuda.amp.GradScaler(1)
+    radiance_field, optimizer, scheduler, occupancy_grid = new_model()
 
     # training
     step = 0
