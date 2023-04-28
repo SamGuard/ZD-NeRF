@@ -110,7 +110,7 @@ def render_image(
             s = len(chunk_rays.origins)
             chunk_results = [
                 torch.zeros(size=(s, 3), device="cuda:0") + 1.0,
-                torch.zeros(size=(s, 1), device="cuda:0") + 1.0,
+                torch.zeros(size=(s, 1), device="cuda:0") + 0.0,
                 torch.zeros(size=(s, 1), device="cuda:0") + 1.0,
                 0,
             ]
