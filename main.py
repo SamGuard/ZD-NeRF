@@ -56,7 +56,7 @@ def new_model():
         )
     radiance_field.train()
     occupancy_grid.train()
-    test_dataset.update_num_rays(1024)
+    train_dataset.update_num_rays(1024)
     return radiance_field, optim, scheduler, occupancy_grid
 
 
