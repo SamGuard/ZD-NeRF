@@ -529,7 +529,7 @@ class ZD_NeRFRadianceField(nn.Module):
         # self.warp = ODEBlock_Forward(NeuralField(4, 3, 32, 6))
         self.warp = ODEBlock_Forward(CurlField(NeuralField(4, 3, 64, 8)))
         #self.warp = ODEBlock_Forward(DivergenceFreeNeuralField(3, 1, 16, 6))
-        self.nerf_diffuse = TimeNeRFRadianceField(use_views=True)
+        self.nerf_diffuse = TimeNeRFRadianceField(use_views=False)
         self.nerf_spec = TimeNeRFRadianceField(net_depth=5, net_width=64)
 
     def query_opacity(self, x, timestamps, step_size):
@@ -546,9 +546,9 @@ class ZD_NeRFRadianceField(nn.Module):
         return self.nerf_diffuse.query_density(x, t)
 
     def forward(self, x, t, condition=None):
-        rgb_diff, sigma = self.nerf_diffuse(x, t, condition=condition)
-        #rgb_spec, _ = self.nerf_spec(x, t, condition)
-        return rgb_diff, sigma
+        rgb_diff, sigma = self.nerf_diffuse(x, t, condition=None)
+        rgb_spec, _ = self.nerf_spec(x, t, condition)
+        #return rgb_diff, sigma
         return rgb_diff + rgb_spec, sigma
 
     def flow_field_pred(
