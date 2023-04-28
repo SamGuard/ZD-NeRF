@@ -289,6 +289,7 @@ if __name__ == "__main__":
                     n_flow_samples = 0
 
                 if n_rendering_samples == 0:
+                    print("No samples")
                     continue
 
                 alive_ray_mask = acc.squeeze(-1) > 0
