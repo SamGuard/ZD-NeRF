@@ -276,7 +276,7 @@ class TimeNeRFRadianceField(nn.Module):
         self.view_encoder = IdentityEncoder(3)
         self.mlp = NerfMLP(
             input_dim=self.posi_encoder.latent_dim,
-            condition_dim=self.view_encoder.latent_dim,
+            condition_dim=0,  # self.view_encoder.latent_dim,
             net_depth=net_depth,
             net_width=net_width,
             skip_layer=skip_layer,
@@ -544,7 +544,7 @@ class ZD_NeRFRadianceField(nn.Module):
         return self.nerf.query_density(x, t)
 
     def forward(self, x, t, condition=None):
-        out = self.nerf(x, t, condition=condition)
+        out = self.nerf(x, t, condition=None)
         return out
 
     def flow_field_pred(
