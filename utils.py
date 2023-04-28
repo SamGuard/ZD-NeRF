@@ -43,15 +43,16 @@ def render_image(
     if len(rays_shape) == 3:
         height, width, _ = rays_shape
         num_rays = height * width
-        rays = namedtuple_map(lambda r: r.reshape([num_rays] + list(r.shape[2:])), rays)
+        rays = namedtuple_map(
+            lambda r: r.reshape([num_rays] + list(r.shape[2:])), rays
+        )
     else:
         num_rays, _ = rays_shape
 
     def sigma_fn(t_starts, t_ends, ray_indices):
-        ray_indices = ray_indices.long()
         t_origins = chunk_rays.origins[ray_indices]
         t_dirs = chunk_rays.viewdirs[ray_indices]
-        positions = t_origins + t_dirs * (t_starts + t_ends) / 2.0
+        positions = t_origins + t_dirs * (t_starts + t_ends)[:, None] / 2.0
         if timestamps is not None:
             # dnerf
             t = (
@@ -59,14 +60,15 @@ def render_image(
                 if radiance_field.training
                 else timestamps.expand_as(positions[:, :1])
             )
-            return radiance_field.query_density(positions, t)
-        return radiance_field.query_density(positions)
+            sigmas = radiance_field.query_density(positions, t)
+        else:
+            sigmas = radiance_field.query_density(positions)
+        return sigmas.squeeze(-1)
 
     def rgb_sigma_fn(t_starts, t_ends, ray_indices):
-        ray_indices = ray_indices.long()
         t_origins = chunk_rays.origins[ray_indices]
         t_dirs = chunk_rays.viewdirs[ray_indices]
-        positions = t_origins + t_dirs * (t_starts + t_ends) / 2.0
+        positions = t_origins + t_dirs * (t_starts + t_ends)[:, None] / 2.0
         if timestamps is not None:
             # dnerf
             t = (
@@ -74,8 +76,10 @@ def render_image(
                 if radiance_field.training
                 else timestamps.expand_as(positions[:, :1])
             )
-            return radiance_field(positions, t, t_dirs)
-        return radiance_field(positions, t_dirs)
+            rgbs, sigmas = radiance_field(positions, t, t_dirs)
+        else:
+            rgbs, sigmas = radiance_field(positions, t_dirs)
+        return rgbs, sigmas.squeeze(-1)
 
     results = []
     chunk = torch.iinfo(torch.int32).max if radiance_field.training else test_chunk_size
