@@ -382,8 +382,8 @@ if __name__ == "__main__":
                                 occupancy_grid,
                                 rays,
                                 # rendering options
-                                near_plane=None,
-                                far_plane=None,
+                                near_plane=near_plane,
+                                far_plane=far_plane,
                                 render_step_size=render_step_size,
                                 render_bkgd=render_bkgd,
                                 cone_angle=args.cone_angle,
@@ -458,8 +458,8 @@ if __name__ == "__main__":
                         occupancy_grid,
                         rays,
                         # rendering options
-                        near_plane=None,
-                        far_plane=None,
+                        near_plane=near_plane,
+                        far_plane=far_plane,
                         render_step_size=render_step_size,
                         render_bkgd=render_bkgd,
                         cone_angle=args.cone_angle,
