@@ -171,7 +171,7 @@ if __name__ == "__main__":
         subject_id=args.scene,
         root_fp=data_root_fp,
         split=args.train_split,
-        num_rays=target_sample_batch_size // render_n_samples,
+        num_rays=1024, #target_sample_batch_size // render_n_samples,
         batch_over_images=False,
     )
     train_dataset.images = train_dataset.images.to(device)
@@ -301,8 +301,9 @@ if __name__ == "__main__":
                 # TEMPORARY FIX, CHANGE min/max rays TO arg
                 num_rays = min(8192, num_rays)
                 if step < 100:
-                    num_rays = max(num_rays, 2048)
-                    num_rays = min(4096, num_rays)
+                    num_rays = 1024
+                    #num_rays = max(num_rays, 2048)
+                    #num_rays = min(4096, num_rays)
                 train_dataset.update_num_rays(num_rays)
 
                 if n_alive_rays == 0:
