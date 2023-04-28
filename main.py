@@ -148,7 +148,6 @@ if __name__ == "__main__":
         pass
 
     # setup the scene bounding box.
-    contraction_type = ContractionType.AABB
     scene_aabb = torch.tensor(args.aabb, dtype=torch.float32, device=device)
     near_plane = None
     far_plane = None
