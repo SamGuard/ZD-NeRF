@@ -9,7 +9,8 @@ import numpy as np
 import torch
 from datasets.utils import Rays, namedtuple_map
 
-from nerfacc import OccupancyGrid, ray_marching, rendering
+from nerfacc.estimators.occ_grid import OccGridEstimator as OccupancyGrid
+from nerfacc import rendering
 
 from mlp import ZD_NeRFRadianceField
 
@@ -82,11 +83,9 @@ def render_image(
 
     for i in range(0, num_rays, chunk):
         chunk_rays = namedtuple_map(lambda r: r[i : i + chunk], rays)
-        packed_info, t_starts, t_ends = ray_marching(
+        ray_indices, t_starts, t_ends = estimator.sampling(
             chunk_rays.origins,
             chunk_rays.viewdirs,
-            scene_aabb=scene_aabb,
-            grid=occupancy_grid,
             sigma_fn=sigma_fn,
             near_plane=near_plane,
             far_plane=far_plane,
@@ -96,17 +95,18 @@ def render_image(
             alpha_thre=alpha_thre,
         )
         if t_starts.shape[0] > 0:
-            rgb, opacity, depth = rendering(
-                t_starts=t_starts,
-                t_ends=t_ends,
-                rgb_sigma_fn=rgb_sigma_fn,
-                n_rays=chunk_rays.origins.shape[0],
-                ray_indices=packed_info,
-                render_bkgd=render_bkgd,
-            )
+            rgb, opacity, depth, extras = rendering(
+            t_starts,
+            t_ends,
+            ray_indices,
+            n_rays=chunk_rays.origins.shape[0],
+            rgb_sigma_fn=rgb_sigma_fn,
+            render_bkgd=render_bkgd,
+        )
             # print("SHAPES", rgb.shape, opacity.shape, depth.shape, len(t_starts))
             chunk_results = [rgb, opacity, depth, len(t_starts)]
         else:
+            print(0/0)
             s = len(chunk_rays.origins)
             chunk_results = [
                 torch.zeros(size=(s, 3), device="cuda:0") + 1.0,
