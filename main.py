@@ -49,6 +49,12 @@ def new_model():
         roi_aabb=args.aabb,
         resolution=grid_resolution,
     ).to(device)
+
+    if(len(args.model) != 0):
+        radiance_field.load_state_dict(
+            torch.load(os.path.join("/", "mnt", "io", "train_out", args.model), device)
+        )
+        
     return radiance_field, optim, scheduler, occupancy_grid
 
 
