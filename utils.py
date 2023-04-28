@@ -85,7 +85,6 @@ def render_image(
     chunk = torch.iinfo(torch.int32).max if radiance_field.training else test_chunk_size
 
     for i in range(0, num_rays, chunk):
-        print(num_rays)
         chunk_rays = namedtuple_map(lambda r: r[i : i + chunk], rays)
         ray_indices, t_starts, t_ends = estimator.sampling(
             chunk_rays.origins,

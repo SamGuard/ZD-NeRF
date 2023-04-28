@@ -235,8 +235,7 @@ if __name__ == "__main__":
                     step=step,
                     occ_eval_fn=lambda x: radiance_field.query_opacity(
                         x, timestamps, render_step_size
-                    ),
-                    occ_thre=1e-1
+                    )
                 )
 
                 # render
