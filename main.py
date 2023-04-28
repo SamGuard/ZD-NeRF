@@ -54,7 +54,7 @@ def new_model():
         radiance_field.load_state_dict(
             torch.load(os.path.join("/", "mnt", "io", "train_out", args.model), device)
         )
-        
+    radiance_field.train()
     return radiance_field, optim, scheduler, occupancy_grid
 
 
