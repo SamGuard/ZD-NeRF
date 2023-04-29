@@ -495,6 +495,9 @@ if __name__ == "__main__":
                         render_mode=render_mode
                     )
 
+                    dead_ray_mask = ~(acc.squeeze(-1) > 0)
+                    rgb[dead_ray_mask] = 1.0
+
                     imageio.imwrite(
                         os.path.join(
                             RENDER_PATH, "rgb_time_{:.3f}_img_{}.png".format(t, i)
