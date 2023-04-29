@@ -37,6 +37,7 @@ def render_image(
     test_chunk_size: int = 8192,
     # only useful for dnerf
     timestamps: Optional[torch.Tensor] = None,
+    render_mode=0,
 ):
     """Render the pixels of an image."""
     rays_shape = rays.origins.shape
@@ -74,7 +75,13 @@ def render_image(
                 if radiance_field.training
                 else timestamps.expand_as(positions[:, :1])
             )
-            rgbs, sigmas = radiance_field(positions, t, t_dirs)
+            rgbs, sigmas = radiance_field(
+                positions,
+                t,
+                t_dirs,
+                diffuse=render_mode <= 1,
+                specular=render_mode != 1,
+            )
         else:
             rgbs, sigmas = radiance_field(positions, t_dirs)
         return rgbs, sigmas.squeeze(-1)

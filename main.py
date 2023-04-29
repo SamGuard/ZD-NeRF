@@ -128,10 +128,17 @@ if __name__ == "__main__":
     parser.add_argument("--train_in_order", type=bool, default=False)
     parser.add_argument("--ray_batch_size", type=int, default=1 << 16)
     parser.add_argument("--flow_step", type=int, default=10000)
+    parser.add_argument(
+        "--render_mode",
+        type=int,
+        default=0,
+        help="diffuse+specular=0, diffuse=1, specular=2",
+    )
     args = parser.parse_args()
 
     render_n_samples = args.samples
     train_in_order = args.train_in_order
+    render_mode = args.render_mode
 
     # setup the dataset
     data_root_fp = "/home/ruilongli/data/dnerf/"
@@ -409,6 +416,7 @@ if __name__ == "__main__":
                                 test_chunk_size=args.test_chunk_size,
                                 # dnerf options
                                 timestamps=timestamps,
+                                render_mode=render_mode
                             )
                             mse = F.mse_loss(rgb, pixels)
                             psnr = -10.0 * torch.log(mse) / np.log(10.0)
