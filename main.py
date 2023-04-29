@@ -416,7 +416,6 @@ if __name__ == "__main__":
                                 test_chunk_size=args.test_chunk_size,
                                 # dnerf options
                                 timestamps=timestamps,
-                                render_mode=render_mode
                             )
                             mse = F.mse_loss(rgb, pixels)
                             psnr = -10.0 * torch.log(mse) / np.log(10.0)
@@ -493,6 +492,7 @@ if __name__ == "__main__":
                         test_chunk_size=args.test_chunk_size,
                         # dnerf options
                         timestamps=timestamps,
+                        render_mode=render_mode
                     )
 
                     imageio.imwrite(

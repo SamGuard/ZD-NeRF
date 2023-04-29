@@ -82,7 +82,6 @@ def render_image(
                 diffuse=render_mode <= 1,
                 specular=render_mode != 1,
             )
-            print("hi", render_mode <= 1, render_mode != 1)
         else:
             rgbs, sigmas = radiance_field(positions, t_dirs)
         return rgbs, sigmas.squeeze(-1)
