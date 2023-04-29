@@ -50,7 +50,7 @@ def new_model():
         resolution=grid_resolution,
     ).to(device)
 
-    if(len(args.model) != 0):
+    if len(args.model) != 0:
         radiance_field.load_state_dict(
             torch.load(os.path.join("/", "mnt", "io", "train_out", args.model), device)
         )
@@ -167,7 +167,7 @@ if __name__ == "__main__":
         subject_id=args.scene,
         root_fp=data_root_fp,
         split=args.train_split,
-        num_rays=1024, #target_sample_batch_size // render_n_samples,
+        num_rays=1024,  # target_sample_batch_size // render_n_samples,
         batch_over_images=False,
     )
     train_dataset.images = train_dataset.images.to(device)
@@ -235,7 +235,7 @@ if __name__ == "__main__":
                     step=step,
                     occ_eval_fn=lambda x: radiance_field.query_opacity(
                         x, timestamps, render_step_size
-                    )
+                    ),
                 )
 
                 # render
@@ -256,7 +256,6 @@ if __name__ == "__main__":
                 alive_ray_mask = acc.squeeze(-1) > 0
                 n_alive_rays = alive_ray_mask.long().sum()
 
-
                 if (
                     step >= flow_field_start_step
                     and 0 == (step - flow_field_start_step) % flow_field_n_steps
@@ -273,13 +272,6 @@ if __name__ == "__main__":
                         max_time_diff=0.25,
                     )
 
-                    spec_samples = sample_specular(
-                        radiance_field=radiance_field,
-                        scene_aabb=scene_aabb,
-                        rays_d=rays.viewdirs,
-                        n_samples=2**14,
-                    )
-
                     loss_nerf_flow = flow_loss_func(
                         start_keypoints_rgb, end_keypoints_rgb, 1
                     ) + flow_loss_func(start_keypoints_dense, end_keypoints_dense, 1)
@@ -287,7 +279,6 @@ if __name__ == "__main__":
                     n_flow_samples = len(start_keypoints_rgb) + len(
                         start_keypoints_dense
                     )
-                    loss_spec = F.mse_loss(spec_samples, torch.zeros_like(spec_samples))
                 else:
                     loss_nerf_flow = 0
                     loss_spec = 0
@@ -335,18 +326,24 @@ if __name__ == "__main__":
                     * (target_sample_batch_size / float(n_rendering_samples))
                 )
 
-                # TEMPORARY FIX, CHANGE min/max rays TO arg
                 num_rays = min(8192, num_rays)
                 if step < 100:
                     num_rays = 1024
-                    #num_rays = max(num_rays, 2048)
-                    #num_rays = min(4096, num_rays)
                 train_dataset.update_num_rays(num_rays)
 
-                # compute loss
+                # rgb loss
                 loss_nerf = F.smooth_l1_loss(
                     rgb[alive_ray_mask], pixels[alive_ray_mask], beta=0.05
                 )
+
+                # spec loss
+                spec_samples = sample_specular(
+                    radiance_field=radiance_field,
+                    scene_aabb=scene_aabb,
+                    rays_d=rays.viewdirs,
+                    n_samples=2**14,
+                )
+                loss_spec = F.mse_loss(spec_samples, torch.zeros_like(spec_samples))
 
                 loss = loss_nerf + loss_nerf_flow + loss_spec
                 optimizer.zero_grad()
