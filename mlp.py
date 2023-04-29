@@ -569,7 +569,7 @@ class ZD_NeRFRadianceField(nn.Module):
             size=(x.shape[0], 1), fill_value=t_end, device=x.device
         )
 
-        alive_mask = self.query_density(x, t_start_expanded) > 1e-2
+        alive_mask = self.query_density(x, t_start_expanded).squeeze() > 1e-2
         x = x[alive_mask]
         t_start_expanded = t_start_expanded[alive_mask]
         t_end_expanded = t_end_expanded[alive_mask]
