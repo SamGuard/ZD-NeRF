@@ -43,9 +43,7 @@ def render_image(
     if len(rays_shape) == 3:
         height, width, _ = rays_shape
         num_rays = height * width
-        rays = namedtuple_map(
-            lambda r: r.reshape([num_rays] + list(r.shape[2:])), rays
-        )
+        rays = namedtuple_map(lambda r: r.reshape([num_rays] + list(r.shape[2:])), rays)
     else:
         num_rays, _ = rays_shape
 
@@ -99,13 +97,13 @@ def render_image(
         )
         if t_starts.shape[0] > 0:
             rgb, opacity, depth, extras = rendering(
-            t_starts,
-            t_ends,
-            ray_indices,
-            n_rays=chunk_rays.origins.shape[0],
-            rgb_sigma_fn=rgb_sigma_fn,
-            render_bkgd=render_bkgd,
-        )
+                t_starts,
+                t_ends,
+                ray_indices,
+                n_rays=chunk_rays.origins.shape[0],
+                rgb_sigma_fn=rgb_sigma_fn,
+                render_bkgd=render_bkgd,
+            )
             # print("SHAPES", rgb.shape, opacity.shape, depth.shape, len(t_starts))
             chunk_results = [rgb, opacity, depth, len(t_starts)]
         else:
@@ -128,13 +126,14 @@ def render_image(
         sum(n_rendering_samples),
     )
 
+
 def enforce_structure(
     radiance_field: ZD_NeRFRadianceField,
     scene_aabb: torch.Tensor,
     n_samples: int,
     max_time_diff=0.01,
     device="cuda:0",
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     """
     Uses the flow field to enforce structure by using the flowfield
     to predict where points will move to and sample those points and
@@ -144,9 +143,7 @@ def enforce_structure(
     sample_points = (
         torch.rand(size=(n_samples, 3), device=device) * aabb_size + scene_aabb[:3]
     )
-    return radiance_field.flow_field_pred(
-        sample_points, t_diff=max_time_diff
-    )
+    return radiance_field.flow_field_pred(sample_points, t_diff=max_time_diff)
 
 
 def sample_specular(
@@ -167,11 +164,12 @@ def sample_specular(
     idx = torch.randint(0, len(rays_d), (n_samples,), device=device)
 
     sample_times = torch.rand(size=(n_samples, 1), device=device)
-    
+
     return radiance_field.sample_spec(sample_points, sample_times, rays_d[idx])
 
-def flow_loss_func(target: torch.Tensor, pred:torch.Tensor, alpha=10)-> torch.Tensor:
-    return ((alpha*(target - pred))**2).mean()
+
+def flow_loss_func(pred: torch.Tensor, target: torch.Tensor, alpha=10) -> torch.Tensor:
+    return ((alpha * (target - pred)) ** 2).mean()
 
 
 """

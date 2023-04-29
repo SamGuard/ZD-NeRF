@@ -528,7 +528,7 @@ class ZD_NeRFRadianceField(nn.Module):
         super().__init__()
         # self.warp = ODEBlock_Forward(NeuralField(4, 3, 32, 6))
         self.warp = ODEBlock_Forward(CurlField(NeuralField(4, 3, 64, 8)))
-        #self.warp = ODEBlock_Forward(DivergenceFreeNeuralField(3, 1, 16, 6))
+        # self.warp = ODEBlock_Forward(DivergenceFreeNeuralField(3, 1, 16, 6))
         self.nerf_diffuse = TimeNeRFRadianceField(use_views=False)
         self.nerf_spec = TimeNeRFRadianceField(net_depth=5, net_width=64)
 
@@ -548,15 +548,19 @@ class ZD_NeRFRadianceField(nn.Module):
     def forward(self, x, t, condition=None):
         rgb_diff, sigma = self.nerf_diffuse(x, t, condition=None)
         rgb_spec, _ = self.nerf_spec(x, t, condition)
-        return rgb_diff, sigma
-        return rgb_spec, sigma
+        # return rgb_diff, sigma
+        # return rgb_spec, sigma
         return rgb_diff + rgb_spec, sigma
 
     def flow_field_pred(
         self, x: torch.Tensor, t_diff=0.01
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         t_start = torch.rand(1, device=x.device)[0]
-        t_end = t_start + torch.rand(1, device=x.device)[0] * t_diff * 2 - t_diff
+        t_end = torch.clip(
+            t_start + torch.rand(1, device=x.device)[0] * t_diff * 2 - t_diff,
+            min=0.0,
+            max=1.0,
+        )
 
         t_start_expanded = torch.full(
             size=(x.shape[0], 1), fill_value=t_start, device=x.device
@@ -565,24 +569,21 @@ class ZD_NeRFRadianceField(nn.Module):
             size=(x.shape[0], 1), fill_value=t_end, device=x.device
         )
 
+        alive_mask = self.query_density(x, t_start_expanded) > 1e-2
+        x = x[alive_mask]
+        t_start_expanded = t_start_expanded[alive_mask]
+        t_end_expanded = t_end_expanded[alive_mask]
+
         x_flow = self.warp(t_start, t_end, x)  # Warp point to new location
 
-        init_rgb, _ = self.nerf_diffuse(
+        init_rgb, init_density = self.nerf_diffuse(
             x,
             t_start_expanded,
         )  # RGB at the starting point
-        end_rgb, _ = self.nerf_diffuse(
+        end_rgb, end_density = self.nerf_diffuse(
             x_flow,
             t_end_expanded,
         )  # Sample what the nerf thinks the colour should be here
-
-        init_density = self.query_density(
-            x, torch.full(size=(x.shape[0], 1), fill_value=t_start, device=x.device)
-        ).squeeze(-1)
-        end_density = self.query_density(
-            x_flow,
-            torch.full(size=(x_flow.shape[0], 1), fill_value=t_start, device=x.device),
-        ).squeeze(-1)
 
         return init_rgb, end_rgb, init_density, end_density
 

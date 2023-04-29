@@ -220,7 +220,8 @@ if __name__ == "__main__":
                     + data["timestamps"]
                 )
 
-                if step == flow_field_start_step and has_keypoints:
+                # TEMPORARY - DISABLE INIT
+                if False and step == flow_field_start_step and has_keypoints:
                     # Decreased epochs for testing, revert once done
                     train_flow_field(
                         radiance_field.warp.odefunc,
@@ -273,8 +274,10 @@ if __name__ == "__main__":
                     )
 
                     loss_nerf_flow = flow_loss_func(
-                        start_keypoints_rgb, end_keypoints_rgb, 1
-                    ) + flow_loss_func(start_keypoints_dense, end_keypoints_dense, 1)
+                        end_keypoints_rgb, start_keypoints_rgb.detach(), 1
+                    ) + flow_loss_func(
+                        end_keypoints_dense, start_keypoints_dense.detach(), 1
+                    )
 
                     n_flow_samples = len(start_keypoints_rgb) + len(
                         start_keypoints_dense
@@ -341,7 +344,7 @@ if __name__ == "__main__":
                     radiance_field=radiance_field,
                     scene_aabb=scene_aabb,
                     rays_d=rays.viewdirs,
-                    n_samples=2**14,
+                    n_samples=2**16,
                 )
                 loss_spec = F.mse_loss(spec_samples, torch.zeros_like(spec_samples))
 
