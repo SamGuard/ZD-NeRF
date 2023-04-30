@@ -522,13 +522,15 @@ class DNeRFRadianceField(nn.Module):
 
 
 class ZD_NeRFRadianceField(nn.Module):
-    def __init__(
-        self,
-    ) -> None:
+    def __init__(self, allow_div=False) -> None:
         super().__init__()
         # self.warp = ODEBlock_Forward(NeuralField(4, 3, 32, 6))
-        self.warp = ODEBlock_Forward(CurlField(NeuralField(4, 3, 64, 8)))
-        # self.warp = ODEBlock_Forward(DivergenceFreeNeuralField(3, 1, 16, 6))
+        self.warp = (
+            ODEBlock_Forward(CurlField(NeuralField(4, 3, 64, 8)))
+            if not allow_div
+            else ODEBlock_Forward(NeuralField(4, 3, 64, 8))
+        )
+
         self.nerf_diffuse = TimeNeRFRadianceField(use_views=False)
         self.nerf_spec = TimeNeRFRadianceField(net_depth=5, net_width=64)
 

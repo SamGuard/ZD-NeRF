@@ -32,7 +32,7 @@ from torch.profiler import profile, record_function, ProfilerActivity
 
 
 def new_model():
-    radiance_field = ZD_NeRFRadianceField().to(device)
+    radiance_field = ZD_NeRFRadianceField(allow_div=allow_div).to(device)
     optim = torch.optim.Adam(radiance_field.parameters(), lr=5e-4)
     scheduler = torch.optim.lr_scheduler.MultiStepLR(
         optim,
@@ -134,11 +134,18 @@ if __name__ == "__main__":
         default=0,
         help="diffuse+specular=0, diffuse=1, specular=2",
     )
+    parser.add_argument(
+        "--allow_div",
+        type=bool,
+        default=False,
+        help="Use zero-divergence neural ODE or not",
+    )
     args = parser.parse_args()
 
     render_n_samples = args.samples
     train_in_order = args.train_in_order
     render_mode = args.render_mode
+    allow_div = args.allow_div
 
     # setup the dataset
     data_root_fp = "/home/ruilongli/data/dnerf/"
@@ -439,7 +446,7 @@ if __name__ == "__main__":
 
                 step += 1
     else:
-        radiance_field = ZD_NeRFRadianceField().to(device)
+        radiance_field = ZD_NeRFRadianceField(allow_div=allow_div).to(device)
         radiance_field.load_state_dict(
             torch.load(os.path.join("/", "mnt", "io", "train_out", args.model), device)
         )
@@ -492,7 +499,7 @@ if __name__ == "__main__":
                         test_chunk_size=args.test_chunk_size,
                         # dnerf options
                         timestamps=timestamps,
-                        render_mode=render_mode
+                        render_mode=render_mode,
                     )
 
                     dead_ray_mask = ~(acc.squeeze(-1) > 0)
