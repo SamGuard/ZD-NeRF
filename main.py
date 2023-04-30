@@ -138,7 +138,7 @@ if __name__ == "__main__":
         "--allow_div",
         type=lambda x: True
         if x == "True"
-        else (False if x == "False" else TypeError("Incorret input to allow div")),
+        else (False if x == "False" else ""),
         default=False,
         help="Use zero-divergence neural ODE or not",
     )
@@ -148,7 +148,9 @@ if __name__ == "__main__":
     train_in_order = args.train_in_order
     render_mode = args.render_mode
     allow_div = args.allow_div
-    print(allow_div)
+    if allow_div == "":
+        print("incorrect value for allow_div")
+        exit(-1)
 
     # setup the dataset
     data_root_fp = "/home/ruilongli/data/dnerf/"
