@@ -136,7 +136,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--allow_div",
-        type=bool,
+        type=lambda x: True
+        if x == "True"
+        else (False if x == "False" else TypeError("Incorret input to allow div")),
         default=False,
         help="Use zero-divergence neural ODE or not",
     )
