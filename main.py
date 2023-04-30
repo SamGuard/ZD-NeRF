@@ -148,6 +148,7 @@ if __name__ == "__main__":
     train_in_order = args.train_in_order
     render_mode = args.render_mode
     allow_div = args.allow_div
+    print(allow_div)
 
     # setup the dataset
     data_root_fp = "/home/ruilongli/data/dnerf/"
