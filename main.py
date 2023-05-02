@@ -365,7 +365,7 @@ if __name__ == "__main__":
                     rays_d=rays.viewdirs,
                     n_samples=2**16,
                 )
-                loss_spec = F.mse_loss(spec_samples, torch.zeros_like(spec_samples))
+                loss_spec = flow_loss_func(spec_samples, torch.zeros_like(spec_samples), 10)
 
                 loss = loss_nerf + loss_nerf_flow + loss_spec
                 optimizer.zero_grad()
