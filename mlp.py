@@ -19,6 +19,14 @@ from functorch import vmap, jacrev, make_functional
 from torchdiffeq import odeint as torchdiffeq_odeint
 
 
+def init_weight_func(scale=1.0) -> Callable:
+    def init_weights(m):
+        if isinstance(m, nn.Linear):
+            torch.nn.init.xavier_uniform_(m.weight, scale)
+            m.bias.data.zero_()
+    return init_weights
+
+
 class MLP(nn.Module):
     def __init__(
         self,
@@ -525,10 +533,12 @@ class ZD_NeRFRadianceField(nn.Module):
     def __init__(self, allow_div=False) -> None:
         super().__init__()
         # self.warp = ODEBlock_Forward(NeuralField(4, 3, 32, 6))
+        neural_field = NeuralField(4, 3, 64, 8)
+        neural_field.apply(init_weight_func(0.001))
         self.warp = (
-            ODEBlock_Forward(CurlField(NeuralField(4, 3, 64, 8)))
+            ODEBlock_Forward(CurlField(neural_field))
             if not allow_div
-            else ODEBlock_Forward(NeuralField(4, 3, 64, 8))
+            else ODEBlock_Forward(neural_field)
         )
 
         self.nerf_diffuse = TimeNeRFRadianceField(use_views=False)
