@@ -370,7 +370,7 @@ if __name__ == "__main__":
                 )
                 loss_spec = flow_loss_func(spec_samples, torch.zeros_like(spec_samples), 10)
 
-                loss = loss_nerf + loss_nerf_flow + loss_spec
+                loss = loss_nerf + 0.1 * loss_nerf_flow + loss_spec
                 optimizer.zero_grad()
                 # do not unscale it because we are using Adam.
                 grad_scaler.scale(loss).backward()
