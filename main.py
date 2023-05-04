@@ -292,15 +292,18 @@ if __name__ == "__main__":
                         max_time_diff=0.25,
                     )
 
-                    loss_nerf_flow = flow_loss_func(
-                        end_keypoints_rgb, start_keypoints_rgb.detach(), 1
-                    ) + flow_loss_func(
-                        end_keypoints_dense, start_keypoints_dense.detach(), 1
+                    loss_nerf_flow = F.smooth_l1_loss(
+                        end_keypoints_rgb, start_keypoints_rgb.detach()
+                    ) + F.smooth_l1_loss(
+                        end_keypoints_dense, start_keypoints_dense.detach()
                     )
 
                     n_flow_samples = len(start_keypoints_rgb) + len(
                         start_keypoints_dense
                     )
+
+                    if(n_flow_samples == 0):
+                        loss_nerf_flow = 0
                 else:
                     loss_nerf_flow = 0
                     loss_spec = 0
