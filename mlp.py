@@ -309,13 +309,13 @@ class TimeNeRFRadianceField(nn.Module):
         sigma = self.mlp.query_density(x)
         return F.relu(sigma)
 
-    def forward(self, x, t, condition=None):
+    def forward(self, x, t, condition=None, activate_rgb=True):
         x = self.join_inputs(x, t)
         x = self.posi_encoder(x)
         if condition is not None:
             condition = self.view_encoder(condition)
         rgb, sigma = self.mlp(x, condition)
-        return torch.sigmoid(rgb), F.relu(sigma)
+        return torch.sigmoid(rgb) if activate_rgb else rgb, F.relu(sigma)
 
 
 class CurlField(nn.Module):
@@ -558,11 +558,11 @@ class ZD_NeRFRadianceField(nn.Module):
         return self.nerf_diffuse.query_density(x, t)
 
     def forward(self, x, t, condition=None, diffuse=True, specular=True):
-        rgb_diff, sigma = self.nerf_diffuse(x, t, condition=None)
-        rgb_spec, _ = self.nerf_spec(x, t, condition)
+        rgb_diff, sigma = self.nerf_diffuse(x, t, condition=None, activate_rgb=False)
+        rgb_spec, _ = self.nerf_spec(x, t, condition, activate_rgb=False)
         # return rgb_diff, sigma
         # return rgb_spec, sigma
-        return (rgb_diff if diffuse else 0) + (rgb_spec if specular else 0), sigma
+        return F.sigmoid((rgb_diff if diffuse else 0) + (rgb_spec if specular else 0)), sigma
 
     def flow_field_pred(
         self, x: torch.Tensor, t_diff=0.01
