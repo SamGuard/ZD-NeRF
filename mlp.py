@@ -562,7 +562,7 @@ class ZD_NeRFRadianceField(nn.Module):
         rgb_spec, _ = self.nerf_spec(x, t, condition, activate_rgb=False)
         # return rgb_diff, sigma
         # return rgb_spec, sigma
-        return F.sigmoid((rgb_diff if diffuse else 0) + (rgb_spec if specular else 0)), sigma
+        return torch.sigmoid((rgb_diff if diffuse else 0) + (rgb_spec if specular else 0)), sigma
 
     def flow_field_pred(
         self, x: torch.Tensor, t_diff=0.01
