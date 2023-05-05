@@ -239,14 +239,13 @@ if __name__ == "__main__":
                     + data["timestamps"]
                 )
 
-                # TEMPORARY - DISABLE INIT
-                if False and step == flow_field_start_step and has_keypoints:
+                if step == flow_field_start_step and has_keypoints:
                     # Decreased epochs for testing, revert once done
                     train_flow_field(
                         radiance_field.warp.odefunc,
                         train_dataset.points_time,
                         train_dataset.points_data,
-                        epochs=1000,
+                        epochs=200,
                         steps_ahead=5,
                     )
 
