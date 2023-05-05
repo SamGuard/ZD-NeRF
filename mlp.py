@@ -534,7 +534,7 @@ class ZD_NeRFRadianceField(nn.Module):
         super().__init__()
         # self.warp = ODEBlock_Forward(NeuralField(4, 3, 32, 6))
         neural_field = NeuralField(4, 3, 64, 8)
-        neural_field.apply(init_weight_func(0.001))
+        #neural_field.apply(init_weight_func(0.001))
         self.warp = (
             ODEBlock_Forward(CurlField(neural_field))
             if not allow_div
