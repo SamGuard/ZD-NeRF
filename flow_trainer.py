@@ -6,6 +6,7 @@ import numpy as np
 
 from torchdiffeq import odeint as odeint
 
+
 def train_flow_field(
     odefunc: nn.Module,
     timestamps_base: torch.Tensor,
@@ -16,7 +17,7 @@ def train_flow_field(
     """points_base.requires_grad_()
     timestamps.requires_grad_()"""
 
-    optimizer = torch.optim.Adam(odefunc.parameters(), 5e-3)
+    optimizer = torch.optim.Adam(odefunc.parameters(), 1e-3)
     sched = torch.optim.lr_scheduler.MultiStepLR(
         optimizer,
         milestones=[
@@ -59,8 +60,9 @@ def train_flow_field(
             rtol=1e-7,
             atol=1e-9,
         )[1:]
-        loss += F.mse_loss(pred, points[1:])
+        loss = loss + F.mse_loss(pred, points[1:])
         if step % batch_size == 0 and step > 0:
+            loss = loss / batch_size
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -109,7 +111,7 @@ def train_flow_field_old(
         # points = points_base + torch.rand_like(points_base, device=points_base.device) * alpha
         points = points_base
         if ms_shooting:
-            """ depracated need to remove
+            """depracated need to remove
             pred = odeint_mshooting(
                 odefunc,
                 points[0],
@@ -134,4 +136,3 @@ def train_flow_field_old(
 
         # grad_scaler.scale(loss).backward()
         step += 1
-

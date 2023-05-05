@@ -1,5 +1,5 @@
 import torch
-from datasets.dnerf_synthetic import load_json_file, load_verts
+from datasets.dnerf_synthetic import load_json_file, load_verts,SubjectLoader
 from mlp import (
     ZD_NeRFRadianceField,
     DivergenceFreeNeuralField,
@@ -7,9 +7,9 @@ from mlp import (
     NeuralField,
     CurlField,
 )
+from flow_trainer import *
 from torchdiffeq import odeint_adjoint
 import matplotlib.pyplot as plt
-from flow_trainer import *
 
 from libs.nerflow.run_nerf_helpers import NeRF
 
@@ -101,52 +101,20 @@ def plot_points(points, ax, pause=None):
 
 
 def test(func: DivergenceFreeNeuralField, timestamps, points):
-    timestamps = torch.linspace(0, 1, 11)
+    timestamps = torch.linspace(0, 1, 21)
     out = odeint_adjoint(func, points[0], timestamps).detach().numpy()
+    name = "zdnerf"
     for i, t in enumerate(timestamps[:]):
         fig = plt.figure(0)
         ax = fig.add_subplot(projection="3d")
-        plot_points(out[i], ax, pause=None)
-
-    return
-
-    fig = plt.figure(0)
-    ax = fig.add_subplot(projection="3d")
-    p_in = points[0]
-    plot_points(p_in.detach().numpy(), ax, pause=0.5)
-    gap = 1 / len(timestamps)
-
-    for i, t in enumerate(timestamps[:-1]):  # torch.linspace(0, 1, 22)
-        p_out = warp(
-            t,
-            t + gap,
-            p_in.clone(),
-        )
-        print(t, t + gap)
-
-        # diff = (p_out - p_in).detach().numpy()
-        # p = p_in.detach().numpy()
-        """ax = plt.figure().add_subplot(projection="3d")
-        ax.axes.set_xlim3d(left=-5, right=5)
-        ax.axes.set_ylim3d(bottom=-5, top=5)
-        ax.axes.set_zlim3d(bottom=-5, top=5)    
-        ax.quiver(
-            p[:, 0],
-            p[:, 1],
-            p[:, 2],
-            diff[:, 0],
-            diff[:, 1],
-            diff[:, 2],
-            normalize=True
-        )
-        plt.show()"""
-
-        plot_points(p_out.detach().numpy(), ax, pause=0.5)
-        p_in = p_out  # points[i + 1]
+        if(i%5 == 0):
+            plot_points(out[i], ax, pause=0.5)
+            fig.savefig(f"testing/figure_out/{name}_{i}")
 
 
 def eval_flow(flow: callable, res=8):
-    scene_aabb = torch.tensor([-5, -5, -5, 5, 5, 5], dtype=torch.float32)
+    #scene_aabb = torch.tensor([-5, -5, -5, 5, 5, 5], dtype=torch.float32)
+    scene_aabb = torch.tensor([0,0,0,10,10,10], dtype=torch.float32)
     aabb_size = float(torch.abs((scene_aabb[3:] - scene_aabb[:3]))[0])
     lin = torch.linspace(0, aabb_size, res, dtype=torch.float32)
     x, y, z = torch.meshgrid((lin, lin, lin), indexing="xy")
@@ -162,39 +130,50 @@ def eval_flow(flow: callable, res=8):
         plt.show()
 
 
-timestamps_base, points = load_verts(load_json_file(".", "train"))
+def training_loop(points, timestamps_base):
+    radiance_field = ZD_NeRFRadianceField(allow_div=True)
+    train = False
+    #radiance_field.load_state_dict(torch.load("testing/test_out.pt", map_location="cpu"))
+    radiance_field.train(train)
+    
+    # warp = ODEBlock_Forward(DivergenceFreeNeuralField(3, 1, 16, 8, torch.nn.ReLU)) #radiance_field.warp
+    # warp = ODEBlock_Forward(CurlField(NeuralField(4, 3, 64, 5)))
+    # warp = ODEBlock_Forward(NeuralField(4, 3, 32, 8))
+    # warp = ODEBlock_MS(DivergenceFreeNeuralField(width=16, depth=5))
+    # warp = ODEBlock_Forward(NeRF(sin_init=True).velocity_module)
+    # radiance_field.warp = warp
 
-indexs = torch.linspace(0, len(timestamps_base) - 1, 25, dtype=torch.long)
-timestamps_base = timestamps_base[indexs]
-points = points[indexs]
+    """indexs = torch.linspace(0, len(timestamps_base) - 1, 25, dtype=torch.long)
+    timestamps_base = timestamps_base[indexs]
+    points = points[indexs]"""
 
-radiance_field = ZD_NeRFRadianceField()
-train = True
-#radiance_field.load_state_dict(torch.load("models/bouncy10k.pt", map_location="cpu"))
-radiance_field.train(train)
-warp = ODEBlock_Forward(DivergenceFreeNeuralField(3, 1, 16, 8, torch.nn.ReLU)) #radiance_field.warp
-# warp = ODEBlock_Forward(CurlField(NeuralField(4, 3, 16, 3)))
-# warp = ODEBlock_Forward(NeuralField(4, 3, 32, 8))
-# warp = ODEBlock_MS(DivergenceFreeNeuralField(width=16, depth=5))
-#warp = ODEBlock_Forward(NeRF(sin_init=True).velocity_module)
+    fig = plt.figure(0)
+    ax = fig.add_subplot(projection="3d")
 
-fig = plt.figure(0)
-ax = fig.add_subplot(projection="3d")
-#points += torch.rand_like(points, device=points.device) * 0.1
-for p in points:
-    plot_points(p.detach().numpy(), ax, pause=.1)
-plt.show()
+    """for p in points:
+        plot_points(p.detach().numpy(), ax, pause=.1)
+    plt.show()"""
+    if train:
+        t_start = time.time()
+        train_flow_field(
+            radiance_field.warp.odefunc,
+            timestamps_base,
+            points,
+            epochs=200, steps_ahead=5
+        )
+        print("Time to train", time.time() - t_start)
+        torch.save(radiance_field.state_dict(), "testing/test_out.pt")
+    test(radiance_field.warp.odefunc, timestamps_base, points)
+    plt.show()
 
-if train:
-    t_start = time.time()
-    train_flow_field(
-        warp.odefunc,
-        timestamps_base,
-        points,
-        epochs=1000, steps_ahead=4
-    )
-    print("Time to train", time.time() - t_start)
+    
 
-test(warp.odefunc, timestamps_base, points)
-plt.show()
-# eval_flow(warp.odefunc)
+def test_keypoints(points, timestamps):
+    train_data = SubjectLoader("brick_v2", "/home/ruilongli/data/dnerf/", split="train")
+    radiance_field = ZD_NeRFRadianceField()
+    #print(keypoints_loss(radiance_field, points, train_data[0]["rays"].viewdirs, n_samples=8))
+
+timestamps, points = load_verts(load_json_file("testing", "train"))
+
+training_loop(points, timestamps)
+#test_keypoints(points, timestamps)
