@@ -136,10 +136,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--allow_div",
-        type=lambda x: True
-        if x == "True"
-        else (False if x == "False" else ""),
-        default=False,
+        type=lambda x: x.lower() == "true",
         help="Use zero-divergence neural ODE or not",
     )
     args = parser.parse_args()
@@ -148,29 +145,23 @@ if __name__ == "__main__":
     train_in_order = args.train_in_order
     render_mode = args.render_mode
     allow_div = args.allow_div
-    if allow_div == "":
-        print("incorrect value for allow_div")
-        exit(-1)
 
     # setup the dataset
     data_root_fp = "/home/ruilongli/data/dnerf/"
     target_sample_batch_size = args.ray_batch_size
     grid_resolution = 128
 
-    # create output folders
-    try:
-        os.mkdir("network_out")
-    except:
-        pass
-
     try:
         os.stat("/mnt/io/")
         RENDER_PATH = "/mnt/io/render_out"
+        SAVE_PATH = "/mnt/io/train_out"
     except:
         RENDER_PATH = "./render_out"
+        SAVE_PATH = "./train_out"
 
     try:
         os.mkdir(RENDER_PATH)
+        os.mkdir(SAVE_PATH)
     except:
         pass
 
@@ -301,7 +292,7 @@ if __name__ == "__main__":
                         start_keypoints_dense
                     )
 
-                    if(n_flow_samples == 0):
+                    if n_flow_samples == 0:
                         loss_nerf_flow = 0
                 else:
                     loss_nerf_flow = 0
@@ -367,7 +358,9 @@ if __name__ == "__main__":
                     rays_d=rays.viewdirs,
                     n_samples=2**16,
                 )
-                loss_spec = flow_loss_func(spec_samples, torch.zeros_like(spec_samples), 10)
+                loss_spec = flow_loss_func(
+                    spec_samples, torch.zeros_like(spec_samples), 10
+                )
 
                 loss = loss_nerf + 0.1 * loss_nerf_flow + loss_spec
                 optimizer.zero_grad()
@@ -393,10 +386,7 @@ if __name__ == "__main__":
                     torch.save(
                         radiance_field.state_dict(),
                         os.path.join(
-                            "/",
-                            "mnt",
-                            "io",
-                            "train_out",  # "train_out",
+                            SAVE_PATH,
                             "zdnerf_nerf_step" + str(step) + ".pt",
                         ),
                     )
@@ -455,7 +445,7 @@ if __name__ == "__main__":
     else:
         radiance_field = ZD_NeRFRadianceField(allow_div=allow_div).to(device)
         radiance_field.load_state_dict(
-            torch.load(os.path.join("/", "mnt", "io", "train_out", args.model), device)
+            torch.load(os.path.join(SAVE_PATH, args.model), device)
         )
         train_dataset.training = False
 
